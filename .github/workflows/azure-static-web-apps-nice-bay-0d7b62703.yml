@@ -45,6 +45,12 @@ jobs:
           output_location: "build" # Built app content directory - optional
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
+          # ** Nueva configuración para que Vite tome la variable de entorno **
+          app_build_command: "npm run build" # Especifica explícitamente el comando de build
+          env:
+            VITE_API_URL: ${{ secrets.VITE_API_URL }} # Aquí pasamos el secreto
+          # --------------------------------------------------------------------------------------
+
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
