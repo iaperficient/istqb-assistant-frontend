@@ -63,9 +63,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const tokenData = await apiService.login({ username, password });
       
-      setUser(tokenData.user);
-      localStorage.setItem('user_data', JSON.stringify(tokenData.user));
-      toast.success(`¡Bienvenido${tokenData.user.is_admin ? ' Admin' : ''} al Asistente ISTQB!`);
+      // Get user data after successful login
+      const userData = await apiService.getCurrentUser();
+      
+      setUser(userData);
+      localStorage.setItem('user_data', JSON.stringify(userData));
+      toast.success(`¡Bienvenido${userData.is_admin ? ' Admin' : ''} al Asistente ISTQB!`);
     } catch (error: any) {
       toast.error(error.message || 'Error al iniciar sesión');
       throw error;

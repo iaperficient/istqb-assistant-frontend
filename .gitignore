@@ -3,7 +3,7 @@
 node_modules/
 .pnp
 .pnp.cjs
-
+.claude/
 # build/
 # Carpeta de salida de producción, generada por `npm run build` o `yarn build`
 build/

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Message } from '../types/chat';
+import { ChatMessage } from '../types/api';
 import apiService from '../services/api';
 import { toast } from 'react-toastify';
 
@@ -14,7 +15,13 @@ export const useChat = () => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = useCallback(async (content: string, context?: string) => {
+  const sendMessage = useCallback(async (messageData: ChatMessage | string, voiceInput?: boolean) => {
+    // Handle both string and ChatMessage object formats
+    const content = typeof messageData === 'string' ? messageData : messageData.message;
+    const chatPayload: ChatMessage = typeof messageData === 'string' 
+      ? { message: messageData }
+      : messageData;
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -34,19 +41,7 @@ export const useChat = () => {
     setIsLoading(true);
 
     try {
-      // Extraer certification code del contexto si está disponible
-      let certificationCode: string | undefined;
-      if (context && context.startsWith('certification:')) {
-        // Si el contexto es un ID, necesitamos obtener el código de la certificación
-        // Por ahora, pasaremos el contexto tal como está
-        certificationCode = context.replace('certification:', '');
-      }
-
-      const response = await apiService.chat({ 
-        message: content,
-        context: context,
-        certification_code: certificationCode
-      });
+      const response = await apiService.chat(chatPayload);
       
       const assistantMessage: Message = {
         id: (Date.now() + 2).toString(),
