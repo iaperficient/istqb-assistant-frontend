@@ -3,10 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
-import { RoleBasedRedirect } from './components/RoleBasedRedirect';
 import { ChatPage } from './pages/ChatPage';
-import { AdminPage } from './pages/AdminPage';
+import { AuthPage } from './pages/AuthPage';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
@@ -19,25 +17,13 @@ function App() {
               path="/" 
               element={
                 <ProtectedRoute>
-                  <RoleBasedRedirect />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/chat" 
-              element={
-                <ProtectedRoute>
                   <ChatPage />
                 </ProtectedRoute>
               } 
             />
             <Route 
-              path="/admin" 
-              element={
-                <ProtectedAdminRoute>
-                  <AdminPage />
-                </ProtectedAdminRoute>
-              } 
+              path="/auth" 
+              element={<AuthPage />} 
             />
           </Routes>
           

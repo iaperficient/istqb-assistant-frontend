@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, ChevronUp, ChevronDown } from 'lucide-react';
+import { Send, Mic, MicOff } from 'lucide-react';
 import { cn } from '../utils/cn';
-import CertificationSelector from './CertificationSelector';
-import QuickActions from './QuickActions';
 
 interface ChatInputProps {
   onSendMessage: (message: string, context?: string) => void;
@@ -17,7 +15,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -35,11 +32,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const handleQuickAction = (actionMessage: string, context?: string) => {
-    if (!isLoading) {
-      onSendMessage(actionMessage, context);
-    }
-  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -88,45 +80,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div className="bg-white border-t border-gray-200">
-      {/* Certification Selector */}
-      <div className="p-4 pb-0">
-        <CertificationSelector />
-      </div>
-
-      {/* Quick Actions */}
-      {showQuickActions && (
-        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-          <QuickActions 
-            onQuickAction={handleQuickAction}
-            disabled={isLoading}
-          />
-        </div>
-      )}
-
       {/* Main Input Area */}
       <div className="p-4">
-        {/* Quick Actions Toggle */}
-        <div className="flex justify-between items-center mb-3">
-          <button
-            onClick={() => setShowQuickActions(!showQuickActions)}
-            className="flex items-center space-x-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            {showQuickActions ? (
-              <>
-                <ChevronUp className="w-4 h-4" />
-                <span>Ocultar acciones rápidas</span>
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4" />
-                <span>Mostrar acciones rápidas</span>
-              </>
-            )}
-          </button>
-        </div>
-
         {/* Suggestions when no message */}
-        {message === '' && !showQuickActions && (
+        {message === '' && (
           <div className="mb-4">
             <p className="text-sm text-gray-500 mb-2">Sugerencias:</p>
             <div className="flex flex-wrap gap-2">
@@ -150,7 +107,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder={placeholder}
               rows={1}
               className="w-full resize-none border border-gray-300 rounded-xl px-4 py-3 pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 max-h-32 shadow-sm"

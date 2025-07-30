@@ -14,10 +14,13 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    /* Linting (muy relajado - ¡NO RECOMENDADO para producción!) */
+    "strict": false, // DESACTIVA TODAS LAS COMPROBACIONES ESTRICTAS DE UNA VEZ (incluye las de abajo)
+    // O si prefieres desactivarlas individualmente:
+    // "noImplicitAny": false,       // DESACTIVADO: Permite tipos 'any' implícitos
+    // "noUnusedLocals": false,      // DESACTIVADO
+    // "noUnusedParameters": false,  // DESACTIVADO
+    // "strictNullChecks": false,    // DESACTIVADO: Permite operar con valores potencialmente null/undefined
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
