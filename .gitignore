@@ -1,0 +1,80 @@
+# Node.js
+# Archivos de la carpeta node_modules, que se regeneran al instalar dependencias
+node_modules/
+.pnp
+.pnp.cjs
+
+# build/
+# Carpeta de salida de producción, generada por `npm run build` o `yarn build`
+build/
+dist/
+out/
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store # Archivos de macOS
+.env # Variables de entorno (¡MUY IMPORTANTE para seguridad!)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+.vscode/ # Configuración de VS Code (opcional, si no quieres compartirla)
+
+# npm
+npm-debug.log
+.npm
+
+# yarn
+yarn-error.log
+.yarn-integrity
+
+# pnpm
+pnpm-debug.log*
+pnpm-lock.yaml
+
+# IDEs y Editores
+.idea/ # Directorios de configuración de IntelliJ/WebStorm
+*.iml # Archivos de módulos de IntelliJ
+.project
+.classpath
+.settings/
+.vscode/ # También puedes ignorar .vscode/ si usas settings.json en el proyecto y no quieres que se comita
+
+# Cachés y temporales
+.cache/
+tmp/
+temp/
+*.tmp
+*.swp
+*.bak
+*.swo
+
+# Dependencias (si usas otras como Bower, aunque es menos común en React moderno)
+bower_components/
+
+# Archivos de test (opcional, si no quieres incluir reportes generados)
+coverage/
+
+# Archivos de dependencias de paquete bloqueadas por la versión
+# Puedes incluir estos si realmente no quieres que se comite el yarn.lock o package-lock.json
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Vercel/Netlify
+.vercel/
+.netlify/
+
+# Storybook (si lo usas)
+storybook-static/
+
+# Otros archivos que no suelen ser necesarios en el control de versiones
+# mini-fotos/ (ejemplo: si tienes una carpeta para imágenes grandes que se suben aparte)
