@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { PublicRoute } from './components/PublicRoute';
 import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
 import { ChatPage } from './pages/ChatPage';
 import { AuthPage } from './pages/AuthPage';
@@ -11,8 +12,8 @@ import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="App">
           <Routes>
             <Route 
@@ -25,7 +26,11 @@ function App() {
             />
             <Route 
               path="/auth" 
-              element={<AuthPage />} 
+              element={
+                <PublicRoute>
+                  <AuthPage />
+                </PublicRoute>
+              } 
             />
             <Route 
               path="/admin" 
@@ -50,8 +55,8 @@ function App() {
             theme="light"
           />
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

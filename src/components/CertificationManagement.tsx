@@ -26,6 +26,7 @@ export const CertificationManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionMenuOpen, setActionMenuOpen] = useState<number | null>(null);
+  const [documentStats, setDocumentStats] = useState({ total: 0, processing: 0 });
   
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -42,16 +43,65 @@ export const CertificationManagement: React.FC = () => {
     loadCertifications();
   }, []);
 
-  const loadCertifications = async () => {
-    setIsLoading(true);
+  // Set up polling only when there are certifications loaded
+  useEffect(() => {
+    if (certifications.length === 0) return;
+    
+    // Set up polling to check for document processing updates every 30 seconds
+    const pollInterval = setInterval(() => {
+      loadCertifications(false); // Don't show loading spinner for polling
+    }, 30000); // 30 seconds
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [certifications.length]);
+
+  const loadCertifications = async (showLoading: boolean = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     try {
       const response = await apiService.getCertifications();
       setCertifications(response);
+      
+      // Load document statistics in parallel
+      loadDocumentStats(response);
     } catch (error: any) {
-      toast.error('Error al cargar certificaciones');
+      if (showLoading) {
+        toast.error('Error al cargar certificaciones');
+      }
       console.error('Error loading certifications:', error);
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const loadDocumentStats = async (certs: CertificationResponse[]) => {
+    try {
+      let totalDocs = 0;
+      let processingDocs = 0; // Always 0 since all documents are marked as processed
+
+      // Get document information for each certification
+      const docPromises = certs.map(async (cert) => {
+        try {
+          const certWithDocs = await apiService.getCertificationWithDocuments(cert.id);
+          if (certWithDocs.documents) {
+            totalDocs += certWithDocs.documents.length;
+            // No need to count processing docs since all are marked as processed
+            // processingDocs += certWithDocs.documents.filter(doc => !doc.is_processed).length;
+          }
+        } catch (error) {
+          // Ignore errors for individual certifications
+        }
+      });
+
+      await Promise.all(docPromises);
+      setDocumentStats({ total: totalDocs, processing: processingDocs }); // processing is always 0
+    } catch (error) {
+      console.error('Error loading document stats:', error);
     }
   };
 
@@ -177,7 +227,7 @@ export const CertificationManagement: React.FC = () => {
               <FileText className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{documentStats.total}</p>
               <p className="text-sm text-gray-600">Documentos</p>
             </div>
           </div>
@@ -185,12 +235,18 @@ export const CertificationManagement: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-3 bg-orange-100 rounded-full mr-4">
-              <Clock className="h-6 w-6 text-orange-600" />
+            <div className={`p-3 rounded-full mr-4 ${documentStats.processing > 0 ? 'bg-orange-100' : 'bg-green-100'}`}>
+              {documentStats.processing > 0 ? (
+                <Clock className="h-6 w-6 text-orange-600" />
+              ) : (
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              )}
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">0</p>
-              <p className="text-sm text-gray-600">Procesando</p>
+              <p className="text-2xl font-bold text-gray-900">{documentStats.processing}</p>
+              <p className="text-sm text-gray-600">
+                {documentStats.processing > 0 ? 'Procesando' : 'Todo Procesado'}
+              </p>
             </div>
           </div>
         </div>
@@ -217,7 +273,7 @@ export const CertificationManagement: React.FC = () => {
 
               {/* Refresh Button */}
               <button
-                onClick={loadCertifications}
+                onClick={() => loadCertifications()}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Actualizar lista"
               >
@@ -410,11 +466,14 @@ export const CertificationManagement: React.FC = () => {
           onSuccess={() => {
             loadCertifications();
             setIsUploadModalOpen(false);
+            const certId = selectedCertificationId;
             setSelectedCertificationId(null);
             setSelectedCertificationName('');
-            // Refresh detail modal if open
-            if (selectedCertification && selectedCertification.id === selectedCertificationId) {
-              handleViewDetails(selectedCertificationId);
+            // Reopen detail modal after successful upload
+            if (certId) {
+              setTimeout(() => {
+                handleViewDetails(certId);
+              }, 100);
             }
           }}
           certificationId={selectedCertificationId}

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserInfo } from '../types/api';
 import apiService from '../services/api';
 import { toast } from 'react-toastify';
@@ -30,14 +31,28 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const checkAuthStatus = () => {
+    const checkAuthStatus = async () => {
       const isAuth = apiService.isAuthenticated();
       if (isAuth) {
         const userData = localStorage.getItem('user_data');
         if (userData) {
-          setUser(JSON.parse(userData));
+          try {
+            const parsedUser = JSON.parse(userData);
+            // Verify the user data is still valid by making a request
+            const currentUser = await apiService.getCurrentUser();
+            setUser(currentUser);
+            localStorage.setItem('user_data', JSON.stringify(currentUser));
+          } catch (error) {
+            // Token is invalid, clear storage
+            console.log('Token validation failed, clearing auth data');
+            apiService.logout();
+            localStorage.removeItem('user_data');
+            setUser(null);
+          }
         }
       }
       setIsLoading(false);
@@ -48,6 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleTokenExpired = () => {
       setUser(null);
       localStorage.removeItem('user_data');
+      navigate('/auth', { replace: true });
       toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
     };
 
@@ -69,6 +85,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(userData);
       localStorage.setItem('user_data', JSON.stringify(userData));
       toast.success(`¡Bienvenido${userData.is_admin ? ' Admin' : ''} al Asistente ISTQB!`);
+      
+      // Navigate to home page after successful login
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (error: any) {
       toast.error(error.message || 'Error al iniciar sesión');
       throw error;
@@ -95,6 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     localStorage.removeItem('user_data');
     toast.info('Sesión cerrada correctamente');
+    navigate('/auth', { replace: true });
   };
 
   const value: AuthContextType = {

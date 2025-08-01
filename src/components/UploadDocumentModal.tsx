@@ -56,18 +56,29 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
     setError('');
 
     try {
+      let result;
       if (documentType === 'syllabus') {
-        await apiService.uploadSyllabus(certificationId, { title: title.trim(), file });
+        result = await apiService.uploadSyllabus(certificationId, { title: title.trim(), file });
       } else {
-        await apiService.uploadSampleExam(certificationId, { title: title.trim(), file });
+        result = await apiService.uploadSampleExam(certificationId, { title: title.trim(), file });
       }
       
-      toast.success(`${documentTypeLabel} subido exitosamente`);
+      if (result && result.success === false) {
+        // Explicitly check for false, not just falsy
+        setError(result.message || `Error al subir ${documentTypeLabel.toLowerCase()}`);
+        toast.error(result.message || `Error al subir ${documentTypeLabel.toLowerCase()}`);
+        return;
+      }
+      
+      // Show success message - use the message from the result if available
+      const successMessage = result?.message || `${documentTypeLabel} subido exitosamente`;
+      toast.success(successMessage);
       handleClose();
       onSuccess();
     } catch (error: any) {
-      setError(error.message || `Error al subir ${documentTypeLabel.toLowerCase()}`);
-      toast.error(`Error al subir ${documentTypeLabel.toLowerCase()}`);
+      const errorMessage = error.message || `Error al subir ${documentTypeLabel.toLowerCase()}`;
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +142,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
   const Icon = documentTypeIcon;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[60] overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         {/* Background overlay */}
         <div
