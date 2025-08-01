@@ -12,6 +12,9 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  getSSOProviders: () => Promise<{ providers: string[], count: number }>;
+  initiateSSOLogin: (provider: string) => Promise<void>;
+  handleSSOCallback: (provider: string, code: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const login = async (username: string, password: string): Promise<void> => {
+  const login = async (username, password) => {
     try {
       setIsLoading(true);
       const tokenData = await apiService.login({ username, password });
@@ -97,7 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (username: string, email: string, password: string): Promise<void> => {
+  const register = async (username, email, password) => {
     try {
       setIsLoading(true);
       const userData = await apiService.register({ username, email, password });
@@ -110,12 +113,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = (): void => {
+  const logout = () => {
     apiService.logout();
     setUser(null);
     localStorage.removeItem('user_data');
     toast.info('Sesión cerrada correctamente');
     navigate('/auth', { replace: true });
+  };
+
+  const getSSOProviders = async () => {
+    try {
+      return await apiService.getSSOProviders();
+    } catch (error) {
+      toast.error('Error fetching SSO providers');
+      throw error;
+    }
+  };
+
+  const initiateSSOLogin = async (provider) => {
+    try {
+      const { authorization_url } = await apiService.initiateSSOLogin(provider);
+      window.location.href = authorization_url;
+    } catch (error) {
+      toast.error('Error initiating SSO login');
+      throw error;
+    }
+  };
+
+  const handleSSOCallback = async (provider, code) => {
+    try {
+      setIsLoading(true);
+      const { user } = await apiService.authenticateWithSSO(provider, code);
+      setUser(user);
+      localStorage.setItem('user_data', JSON.stringify(user));
+      toast.success('SSO login successful');
+      navigate('/', { replace: true });
+    } catch (error) {
+      toast.error('SSO authentication failed');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const value: AuthContextType = {
@@ -126,6 +164,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    getSSOProviders,
+    initiateSSOLogin,
+    handleSSOCallback,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
