@@ -1,79 +1,91 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '../../test/test-utils';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { LoginForm } from '../LoginForm';
-
-// Mock the auth context
-const mockLogin = vi.fn();
-const mockGetSSOProviders = vi.fn();
-const mockInitiateSSOLogin = vi.fn();
-
-vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({
-    login: mockLogin,
-    isLoading: false,
-    getSSOProviders: mockGetSSOProviders,
-    initiateSSOLogin: mockInitiateSSOLogin,
-  }),
-}));
+import { AuthProvider } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
 // Mock react-toastify
 vi.mock('react-toastify', () => ({
   toast: {
     error: vi.fn(),
+    success: vi.fn(),
   },
 }));
 
 describe('LoginForm', () => {
-  const mockOnSwitchToRegister = vi.fn();
+  const onSwitchToRegister = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSSOProviders.mockResolvedValue({ providers: ['github'], count: 1 });
   });
 
-  it('renders the login form with all required fields', () => {
-    render(<LoginForm onSwitchToRegister={mockOnSwitchToRegister} />);
+  afterEach(() => {
+    cleanup();
+  });
 
+  const renderLoginForm = () => {
+    return render(
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm onSwitchToRegister={onSwitchToRegister} />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+  };
+
+  it('renders the login form with all required fields', () => {
+    renderLoginForm();
+    
+    // Check form elements are rendered
     expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    expect(screen.getByText(/¿no tienes una cuenta?/i)).toBeInTheDocument();
   });
 
   it('shows validation errors when form is submitted empty', async () => {
-    render(<LoginForm onSwitchToRegister={mockOnSwitchToRegister} />);
+    renderLoginForm();
+    
+    // Submit the form without filling any fields
+    fireEvent.click(screen.getByRole('button', { name: /iniciar sesión/i }));
 
-    const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
-    fireEvent.click(submitButton);
-
-    // Form validation should prevent submission
-    expect(mockLogin).not.toHaveBeenCalled();
+    // Check for validation messages
+    expect(await screen.findByText(/el nombre de usuario es requerido/i)).toBeInTheDocument();
+    expect(await screen.findByText(/la contraseña es requerida/i)).toBeInTheDocument();
   });
 
   it('toggles password visibility when eye icon is clicked', () => {
-    render(<LoginForm onSwitchToRegister={mockOnSwitchToRegister} />);
-
-    const passwordInput = screen.getByLabelText(/contraseña/i);
-    expect(passwordInput).toHaveAttribute('type', 'password');
-
-    // Find and click the toggle button - it might be inside the input or next to it
-    const toggleButtons = screen.getAllByRole('button');
-    const toggleButton = toggleButtons.find(button => 
-      button.getAttribute('type') !== 'submit' && 
-      button.textContent !== 'Iniciar Sesión'
-    );
-
-    if (toggleButton) {
-      fireEvent.click(toggleButton);
-      expect(passwordInput).toHaveAttribute('type', 'text');
+    renderLoginForm();
+    
+    const passwordInput = screen.getByLabelText(/contraseña/i) as HTMLInputElement;
+    
+    // Password should be hidden by default
+    expect(passwordInput.type).toBe('password');
+    
+    // Find the eye icon button inside the password input container
+    const passwordContainer = passwordInput.closest('div');
+    const toggleButton = passwordContainer?.querySelector('button');
+    
+    if (!toggleButton) {
+      throw new Error('Password toggle button not found');
     }
-  });
+    
+    // Click to show password
+    fireEvent.click(toggleButton);
+    expect(passwordInput.type).toBe('text');
+    
+    // Click again to hide password
+    fireEvent.click(toggleButton);
+    expect(passwordInput.type).toBe('password');
+  });  
 
   it('calls onSwitchToRegister when register link is clicked', () => {
-    render(<LoginForm onSwitchToRegister={mockOnSwitchToRegister} />);
-
+    renderLoginForm();
+    
     const registerLink = screen.getByText(/regístrate aquí/i);
     fireEvent.click(registerLink);
-
-    expect(mockOnSwitchToRegister).toHaveBeenCalledTimes(1);
+    
+    expect(onSwitchToRegister).toHaveBeenCalledTimes(1);
   });
 });

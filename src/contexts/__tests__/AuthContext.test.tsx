@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '../../test/test-utils';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 import { AuthProvider, useAuth } from '../AuthContext';
+import { MemoryRouter } from 'react-router-dom';
 import apiService from '../../services/api';
 
 // Mock the API service
@@ -29,36 +31,32 @@ vi.mock('react-toastify', () => ({
 
 // Test component that uses the auth context
 const TestComponent = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   return (
     <div>
-      <div data-testid="authenticated">{isAuthenticated ? 'true' : 'false'}</div>
-      <div data-testid="loading">{isLoading ? 'true' : 'false'}</div>
+      <div data-testid="user">{user ? JSON.stringify(user) : 'null'}</div>
+      <div data-testid="isAuthenticated">{isAuthenticated.toString()}</div>
+      <div data-testid="isLoading">{isLoading.toString()}</div>
     </div>
   );
 };
 
 describe('AuthContext', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    localStorage.clear();
-  });
-
-  it('provides initial auth state', async () => {
+  it('provides initial auth state', () => {
     // Setup mocks
-    (apiService.isAuthenticated as any).mockReturnValue(false);
+    (apiService.isAuthenticated as any).mockResolvedValue(false);
 
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <MemoryRouter>
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      </MemoryRouter>
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(screen.getByTestId('loading')).toHaveTextContent('false');
-    });
-
-    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
+    // Check initial state
+    expect(screen.getByTestId('user')).toHaveTextContent('null');
+    expect(screen.getByTestId('isAuthenticated')).toHaveTextContent('false');
+    expect(screen.getByTestId('isLoading')).toHaveTextContent('false');
   });
 });
