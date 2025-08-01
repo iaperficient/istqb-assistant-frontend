@@ -12,6 +12,7 @@ import { SSOCallback } from './components/SSOCallback';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
+  console.log('App component rendering');
   return (
     <Router>
       <AuthProvider>

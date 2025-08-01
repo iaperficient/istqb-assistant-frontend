@@ -39,26 +39,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const isAuth = apiService.isAuthenticated();
-      if (isAuth) {
-        const userData = localStorage.getItem('user_data');
-        if (userData) {
-          try {
-            const parsedUser = JSON.parse(userData);
-            // Verify the user data is still valid by making a request
-            const currentUser = await apiService.getCurrentUser();
-            setUser(currentUser);
-            localStorage.setItem('user_data', JSON.stringify(currentUser));
-          } catch (error) {
-            // Token is invalid, clear storage
-            console.log('Token validation failed, clearing auth data');
-            apiService.logout();
-            localStorage.removeItem('user_data');
-            setUser(null);
+      try {
+        const isAuth = apiService.isAuthenticated();
+        if (isAuth) {
+          const userData = localStorage.getItem('user_data');
+          if (userData) {
+            try {
+              const parsedUser = JSON.parse(userData);
+              // Verify the user data is still valid by making a request
+              const currentUser = await apiService.getCurrentUser();
+              setUser(currentUser);
+              localStorage.setItem('user_data', JSON.stringify(currentUser));
+            } catch (error) {
+              // Token is invalid, clear storage
+              console.log('Token validation failed, clearing auth data');
+              apiService.logout();
+              localStorage.removeItem('user_data');
+              setUser(null);
+            }
           }
         }
+      } catch (error) {
+        console.error('Error during auth check:', error);
+        // Continue with unauthenticated state
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkAuthStatus();
