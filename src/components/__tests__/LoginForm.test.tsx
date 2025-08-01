@@ -1,33 +1,42 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { LoginForm } from '../LoginForm';
 import { AuthProvider } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 
-// Mock the useAuth hook
-vi.mock('../../contexts/AuthContext', async () => {
-  const actual = await vi.importActual('../../contexts/AuthContext');
-  return {
-    ...actual as any,
-    useAuth: () => ({
-      login: vi.fn().mockResolvedValue({}),
-      isLoading: false,
-    }),
-  };
-});
+// Mock react-toastify
+vi.mock('react-toastify', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
 
 describe('LoginForm', () => {
   const onSwitchToRegister = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    render(
-      <AuthProvider>
-        <LoginForm onSwitchToRegister={onSwitchToRegister} />
-      </AuthProvider>
-    );
   });
 
+  afterEach(() => {
+    cleanup();
+  });
+
+  const renderLoginForm = () => {
+    return render(
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm onSwitchToRegister={onSwitchToRegister} />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+  };
+
   it('renders the login form with all required fields', () => {
+    renderLoginForm();
+    
     // Check form elements are rendered
     expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
@@ -36,6 +45,8 @@ describe('LoginForm', () => {
   });
 
   it('shows validation errors when form is submitted empty', async () => {
+    renderLoginForm();
+    
     // Submit the form without filling any fields
     fireEvent.click(screen.getByRole('button', { name: /iniciar sesión/i }));
 
@@ -45,17 +56,19 @@ describe('LoginForm', () => {
   });
 
   it('toggles password visibility when eye icon is clicked', () => {
+    renderLoginForm();
+    
     const passwordInput = screen.getByLabelText(/contraseña/i) as HTMLInputElement;
     
     // Password should be hidden by default
     expect(passwordInput.type).toBe('password');
     
-    // Find the toggle button by its position relative to the password input
+    // Find the eye icon button inside the password input container
     const passwordContainer = passwordInput.closest('div');
     const toggleButton = passwordContainer?.querySelector('button');
     
     if (!toggleButton) {
-      throw new Error('Toggle button not found');
+      throw new Error('Password toggle button not found');
     }
     
     // Click to show password
@@ -65,11 +78,14 @@ describe('LoginForm', () => {
     // Click again to hide password
     fireEvent.click(toggleButton);
     expect(passwordInput.type).toBe('password');
-  });
+  });  
 
   it('calls onSwitchToRegister when register link is clicked', () => {
-    const registerLink = screen.getByText(/regístrate/i);
+    renderLoginForm();
+    
+    const registerLink = screen.getByText(/regístrate aquí/i);
     fireEvent.click(registerLink);
+    
     expect(onSwitchToRegister).toHaveBeenCalledTimes(1);
   });
 });
