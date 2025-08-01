@@ -39,6 +39,7 @@ export interface ChatMessage {
   message: string;
   context?: string;
   certification_code?: string;
+  conversation_id?: string;
 }
 
 export interface RAGInfo {
