@@ -1,15 +1,11 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*"]
+    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/assets/*", "*.js", "*.css"]
   },
   "routes": [
     {
       "route": "/auth/callback/*",
-      "rewrite": "/index.html"
-    },
-    {
-      "route": "/*",
       "rewrite": "/index.html"
     }
   ],
