@@ -3,8 +3,33 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { AuthProvider, useAuth } from '../AuthContext';
 import { MemoryRouter } from 'react-router-dom';
+import apiService from '../../services/api';
 
-// Simple test component
+// Mock the API service
+vi.mock('../../services/api', () => ({
+  default: {
+    isAuthenticated: vi.fn(),
+    getCurrentUser: vi.fn(),
+    logout: vi.fn(),
+    login: vi.fn(),
+    register: vi.fn(),
+    getSSOProviders: vi.fn(),
+    initiateSSOLogin: vi.fn(),
+    authenticateWithSSO: vi.fn(),
+  },
+}));
+
+// Mock react-toastify
+vi.mock('react-toastify', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+  ToastContainer: () => null,
+}));
+
+// Test component that uses the auth context
 const TestComponent = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   return (
@@ -17,25 +42,10 @@ const TestComponent = () => {
 };
 
 describe('AuthContext', () => {
-  // Mock the API module to avoid actual API calls
-  vi.mock('../../services/api', () => ({
-    __esModule: true,
-    default: {
-      isAuthenticated: vi.fn().mockResolvedValue(false),
-      login: vi.fn(),
-      getCurrentUser: vi.fn(),
-    },
-  }));
-
-  // Mock toast to prevent actual toast notifications
-  vi.mock('react-toastify', () => ({
-    toast: {
-      success: vi.fn(),
-      error: vi.fn(),
-    },
-  }));
-
   it('provides initial auth state', () => {
+    // Setup mocks
+    (apiService.isAuthenticated as any).mockResolvedValue(false);
+
     render(
       <MemoryRouter>
         <AuthProvider>

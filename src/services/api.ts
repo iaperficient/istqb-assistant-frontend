@@ -141,6 +141,41 @@ class ApiService {
     }
   }
 
+  // SSO Authentication Methods
+  async getSSOProviders(): Promise<{ providers: string[], count: number }> {
+    try {
+      const response = await this.api.get('/auth/sso/providers');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async initiateSSOLogin(provider: string): Promise<{ provider: string, authorization_url: string, message: string }> {
+    try {
+      const response = await this.api.get(`/auth/sso/${provider}/login`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async authenticateWithSSO(provider: string, code: string): Promise<{ token: string, user: UserInfo }> {
+    try {
+      const response = await this.api.post(`/auth/sso/${provider}/callback`, {
+        code: code,
+        redirect_uri: import.meta.env.VITE_SSO_CALLBACK
+      });
+      
+      // Set the token for future requests
+      this.setToken(response.data.token);
+      
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
   async chat(message: ChatMessage): Promise<ChatResponse> {
     try {
       const response = await this.api.post<ChatResponse>('/chat/', message);

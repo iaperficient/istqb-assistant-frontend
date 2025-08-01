@@ -8,9 +8,11 @@ import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
 import { ChatPage } from './pages/ChatPage';
 import { AuthPage } from './pages/AuthPage';
 import { AdminPage } from './pages/AdminPage';
+import { SSOCallback } from './components/SSOCallback';
 import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
+  console.log('App component rendering');
   return (
     <Router>
       <AuthProvider>
@@ -39,6 +41,10 @@ function App() {
                   <AdminPage />
                 </ProtectedAdminRoute>
               } 
+            />
+            <Route 
+              path="/auth/callback/:provider" 
+              element={<SSOCallback />} 
             />
           </Routes>
           
