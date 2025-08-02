@@ -11,13 +11,14 @@ import { useChat } from '../hooks/useChat';
 import { ConversationSidebar } from '../components/ConversationSidebar';
 
 export const ChatPage: React.FC = () => {
-  const { messagesMap, getMessagesForConversation, isLoading, sendMessage, clearChat, conversationId, setConversationId } = useChat();
+  const { messagesMap, getMessagesForConversation, setMessagesForConversation, isLoading, sendMessage, clearChat, conversationId, setConversationId } = useChat();
   const [messagesState, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [selectedCertification, setSelectedCertification] = useState<string | null>(null);
   const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
   const [conversations, setConversations] = useState<{ id: string; label: string; startDate: string }[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationId);
+  const [message, setMessage] = useState('');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -60,7 +61,14 @@ export const ChatPage: React.FC = () => {
     const newId = uuidv4();
     setActiveConversationId(newId);
     setConversationId(newId);
-    setMessages([]);
+    const defaultSystemMessage = {
+      id: Date.now().toString(),
+      content: 'Hello! How can I assist you with ISTQB certifications today?',
+      isUser: false,
+      timestamp: new Date(),
+    };
+    setMessagesForConversation(newId, [defaultSystemMessage]);
+    setMessages([defaultSystemMessage]);
     setHasUserSentMessage(false);
     setConversations(prev => [
       { id: newId, label: `Chat ${prev.length + 1}`, startDate: new Date().toLocaleDateString() },
@@ -95,9 +103,9 @@ export const ChatPage: React.FC = () => {
         onDeleteConversation={(id) => {
           setConversations((prev) => prev.filter((conv) => conv.id !== id));
           if (activeConversationId === id) {
+            clearChat();
             setMessages([]);
             setActiveConversationId(null);
-            setConversationId('');
             setHasUserSentMessage(false);
           }
         }}
@@ -121,6 +129,8 @@ export const ChatPage: React.FC = () => {
               onCertificationSelect={setSelectedCertification}
               onClearChat={clearChat}
               showQuickActions={!hasUserSentMessage}
+              message={message}
+              setMessage={setMessage}
             />
           </div>
         </div>

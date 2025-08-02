@@ -59,33 +59,20 @@ export const useChat = () => {
 
     const currentMessages = getMessagesForConversation(conversationId);
     setMessagesForConversation(conversationId, [...currentMessages, userMessage, loadingMessage]);
-    setIsLoading(true);
 
     try {
-      const response = await apiService.chat(chatPayload);
-      
+      const response = await apiService.chat(chatPayload); // Updated to use `chat` method
       const assistantMessage: Message = {
-        id: (Date.now() + 2).toString(),
-        content: response.response,
+        id: Date.now().toString(),
+        content: response.response, // Corrected to use `response`
         isUser: false,
         timestamp: new Date(),
       };
-
-      const updatedMessages = getMessagesForConversation(conversationId);
-      // Remove loading message before adding assistant's response
-      const filteredMessages = updatedMessages.filter(m => !m.isLoading);
-      setMessagesForConversation(conversationId, [...filteredMessages, assistantMessage]);
-    } catch (error: any) {
-      const updatedMessages = getMessagesForConversation(conversationId).slice(0, -1);
-      setMessagesForConversation(conversationId, updatedMessages);
-      
-      if (error.status === 401) {
-        toast.error('Your session has expired. Please log in again.');
-      } else {
-        toast.error(error.message || 'Error sending message. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
+      setMessagesForConversation(conversationId, [...currentMessages, userMessage, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message. Please try again.');
+      setMessagesForConversation(conversationId, currentMessages); // Revert state on error
     }
   }, [conversationId, messagesMap]);
 

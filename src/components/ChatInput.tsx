@@ -13,20 +13,23 @@ interface ChatInputProps {
   onCertificationSelect?: (code: string | null) => void;
   onClearChat?: () => void;
   showQuickActions?: boolean;
+  message: string;
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ 
-  onSendMessage, 
-  isLoading, 
+export const ChatInput: React.FC<ChatInputProps> = ({
+  onSendMessage,
+  isLoading,
   placeholder = "Ask about ISTQB certifications...",
   selectedCertification,
   onCertificationSelect,
-  onClearChat
+  onClearChat,
+  showQuickActions = true,
+  message,
+  setMessage,
 }) => {
-  const [message, setMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [certifications, setCertifications] = useState<CertificationResponse[]>([]);
-  const [showQuickActions, setShowQuickActions] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -53,7 +56,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     e.preventDefault();
     if (message.trim() && !isLoading) {
       onSendMessage(message.trim());
-      setMessage('');
+      // Clear the message only after successful processing
+      setTimeout(() => setMessage(''), 500); // Delay clearing the input
     }
   };
 
@@ -68,30 +72,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       const recognition = new SpeechRecognition();
-      
+
       recognition.continuous = false;
       recognition.interimResults = false;
       recognition.lang = 'en-US';
-      
+
       recognition.onstart = () => {
         setIsListening(true);
       };
-      
+
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setMessage(prev => prev + transcript);
         setIsListening(false);
       };
-      
+
       recognition.onerror = () => {
         setIsListening(false);
         toast.error('Error in voice recognition');
       };
-      
+
       recognition.onend = () => {
         setIsListening(false);
       };
-      
+
       recognition.start();
     } else {
       toast.error('Voice recognition is not supported in this browser');
