@@ -17,12 +17,24 @@ export const useChat = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem('conversation_id', conversationId);
-  }, [conversationId]);
+    // Cargar mensajes y conversation_id desde localStorage al iniciar
+    const storedMessagesMap = localStorage.getItem('messages_map');
+    const storedConversationId = localStorage.getItem('conversation_id');
+
+    if (storedMessagesMap) {
+      setMessagesMap(JSON.parse(storedMessagesMap));
+    }
+
+    if (storedConversationId) {
+      setConversationId(storedConversationId);
+    }
+  }, []);
 
   useEffect(() => {
+    // Guardar mensajes y conversation_id en localStorage cuando cambien
     localStorage.setItem('messages_map', JSON.stringify(messagesMap));
-  }, [messagesMap]);
+    localStorage.setItem('conversation_id', conversationId);
+  }, [messagesMap, conversationId]);
 
   const getMessagesForConversation = (id: string): Message[] => {
     return messagesMap[id] || [];
@@ -85,6 +97,16 @@ export const useChat = () => {
     setConversationId(uuidv4());
   }, [conversationId]);
 
+  const clearChatData = () => {
+    localStorage.removeItem('messages_map');
+    localStorage.removeItem('conversation_id');
+  };
+
+  const clearSessionData = () => {
+    localStorage.removeItem('access_token');
+    // Keep conversations intact
+  };
+
   return {
     messagesMap,
     getMessagesForConversation,
@@ -94,5 +116,7 @@ export const useChat = () => {
     clearChat,
     conversationId,
     setConversationId,
+    clearChatData,
+    clearSessionData,
   };
 };
