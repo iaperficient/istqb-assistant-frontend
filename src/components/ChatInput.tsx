@@ -194,42 +194,47 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       )}
 
       {/* Message Input */}
-      <form onSubmit={handleSubmit} className="relative flex items-end w-[896px]">
-        <textarea
-          ref={textareaRef}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder={placeholder}
-          className="w-full pr-12 py-4 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 resize-none max-h-40 text-lg pl-4 text-gray-500"
-          style={{
-            scrollbarWidth: 'none',
-            /* @ts-ignore */
-            msOverflowStyle: 'none',
-          }}
-          onScroll={(e) => {
-            const target = e.target as HTMLElement;
-            target.style.scrollbarWidth = 'none';
-            /* @ts-ignore */
-            target.style.msOverflowStyle = 'none';
-          }}
-        />
-        <style>
-          {`
-            textarea::-webkit-scrollbar {
-              display: none;
-            }
-          `}
-        </style>
-        {message.trim() && !isLoading && (
-          <button
-            type="submit"
-            className="absolute right-3 bottom-4 p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-          >
-            <Send className="h-5 w-5" />
-          </button>
-        )}
-      </form>
+      <div className="flex flex-col items-center w-[896px] mb-2">
+        <form onSubmit={handleSubmit} className="relative flex items-end w-full">
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={placeholder}
+            className="w-full pr-12 py-4 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 resize-none max-h-40 text-lg pl-4 text-gray-500"
+            style={{
+              scrollbarWidth: 'none',
+              /* @ts-ignore */
+              msOverflowStyle: 'none',
+            }}
+            onScroll={(e) => {
+              const target = e.target as HTMLElement;
+              target.style.scrollbarWidth = 'none';
+              /* @ts-ignore */
+              target.style.msOverflowStyle = 'none';
+            }}
+          />
+          <style>
+            {`
+              textarea::-webkit-scrollbar {
+                display: none;
+              }
+            `}
+          </style>
+          {message.trim() && !isLoading && (
+            <button
+              type="submit"
+              className="absolute right-3 bottom-4 p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          )}
+        </form>
+        <div className="w-full text-center mt-1">
+          <span className="text-xs text-gray-400">This AI assistant may make mistakes. Please verify important information.</span>
+        </div>
+      </div>
     </div>
   );
 };

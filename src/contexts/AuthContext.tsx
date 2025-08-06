@@ -28,6 +28,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,7 +49,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleTokenExpired = () => {
       setUser(null);
       localStorage.removeItem('user_data');
+      sessionStorage.clear();
+      localStorage.removeItem('conversation_id');
       toast.error('Session expired. Please sign in again.');
+      window.location.href = '/login';
     };
 
     window.addEventListener('tokenExpired', handleTokenExpired);
@@ -61,14 +65,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
+      // Clear all storage before login to prevent old data reuse
+      localStorage.clear();
+      sessionStorage.clear();
+      // Remove any lingering conversation_id
+      localStorage.removeItem('conversation_id');
+
       const tokenData = await apiService.login({ username, password });
-      
-      // Get user data after successful login
       const userData = await apiService.getCurrentUser();
-      
       setUser(userData);
       localStorage.setItem('user_data', JSON.stringify(userData));
       toast.success(`Welcome${userData.is_admin ? ' Admin' : ''} to the ISTQB Assistant!`);
+      // Redirect to main page after successful login
+      window.location.href = '/';
     } catch (error: any) {
       toast.error(error.message || 'Error signing in');
       throw error;
@@ -80,10 +89,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (username: string, email: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
-      const userData = await apiService.register({ username, email, password });
-      toast.success('Registro exitoso. Ya puedes iniciar sesión.');
+      await apiService.register({ username, email, password });
+      toast.success('Registration successful. You can now sign in.');
     } catch (error: any) {
-      toast.error(error.message || 'Error al registrar usuario');
+      toast.error(error.message || 'Error registering user');
       throw error;
     } finally {
       setIsLoading(false);
@@ -91,10 +100,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = (): void => {
+    // Call backend logout endpoint
     apiService.logout();
+    // Clear all user/session/conversation data
     setUser(null);
-    localStorage.removeItem('user_data');
-    toast.info('Sesión cerrada correctamente');
+    localStorage.clear();
+    sessionStorage.clear();
+    // Remove any lingering conversation_id
+    localStorage.removeItem('conversation_id');
+    toast.info('Successfully logged out');
+    // Redirect to login page
+    window.location.href = '/login';
   };
 
   const value: AuthContextType = {

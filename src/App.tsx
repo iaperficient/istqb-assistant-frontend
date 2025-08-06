@@ -28,6 +28,10 @@ function App() {
               element={<AuthPage />} 
             />
             <Route 
+              path="/login" 
+              element={<AuthPage />} 
+            />
+            <Route 
               path="/admin" 
               element={
                 <ProtectedAdminRoute>
