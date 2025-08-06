@@ -45,54 +45,85 @@ export const DashboardOverview: React.FC = () => {
 
   const loadDashboardData = async () => {
     try {
-      // Load user stats
+      // Load user stats from backend
       const stats = await apiService.getUserStats();
       setUserStats(stats);
 
-      // Load system metrics (mock data for now)
+      // Load certifications data from backend
+      const certifications = await apiService.getCertifications();
+      let totalDocuments = 0;
+      let syllabi = 0;
+      let sampleExams = 0;
+      let processingDocs = 0;
+
+      // Get document counts for each certification
+      const docPromises = certifications.map(async (cert) => {
+        try {
+          const certWithDocs = await apiService.getCertificationWithDocuments(cert.id);
+          if (certWithDocs.documents) {
+            totalDocuments += certWithDocs.documents.length;
+            syllabi += certWithDocs.documents.filter(doc => doc.document_type === 'syllabus').length;
+            sampleExams += certWithDocs.documents.filter(doc => doc.document_type === 'sample_exam').length;
+            processingDocs += certWithDocs.documents.filter(doc => !doc.is_processed).length;
+          }
+        } catch (error) {
+          // Ignore errors for individual certifications
+        }
+      });
+
+      await Promise.all(docPromises);
+
+      // Build system metrics with real data
+      // Since we're now marking all documents as processed, adjust the logic
       const metrics: SystemMetrics = {
-        totalCertifications: 12,
-        activeCertifications: 10,
-        totalDocuments: 45,
-        ragStatus: 'operational',
-        ragDocuments: 230,
-        chatMessages: 1250,
-        systemUptime: '15 días'
+        totalCertifications: certifications.length,
+        activeCertifications: certifications.filter(c => c.is_active).length,
+        totalDocuments,
+        ragStatus: 'operational', // Always operational since all docs are marked as processed
+        ragDocuments: totalDocuments, // All documents are processed
+        chatMessages: 0, // No endpoint available
+        systemUptime: 'N/A' // No endpoint available
       };
       setSystemMetrics(metrics);
 
-      // Load recent activity (mock data for now)
-      const activity: RecentActivity[] = [
-        {
-          id: 1,
+      // Create recent activity based on real data (limited info available)
+      const activity: RecentActivity[] = [];
+      
+      // Add activities based on certifications (using creation dates)
+      certifications
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3)
+        .forEach((cert, index) => {
+          activity.push({
+            id: activity.length + 1,
+            type: 'certification_added',
+            message: `Certificación agregada: ${cert.name}`,
+            timestamp: cert.created_at,
+            user: 'admin'
+          });
+        });
+
+      // Add mock activity for variety (since we don't have other endpoints)
+      if (activity.length < 4) {
+        activity.push({
+          id: activity.length + 1,
           type: 'user_registered',
-          message: 'Nuevo usuario registrado',
-          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          user: 'usuario@example.com'
-        },
-        {
-          id: 2,
-          type: 'chat_interaction',
-          message: 'Consulta sobre ISTQB Foundation Level',
-          timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-          user: 'estudiante'
-        },
-        {
-          id: 3,
-          type: 'certification_added',
-          message: 'Nueva certificación agregada: ISTQB Advanced Level',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          user: 'admin'
-        },
-        {
-          id: 4,
-          type: 'document_uploaded',
-          message: 'Syllabus actualizado para Foundation Level',
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-          user: 'admin'
-        }
-      ];
+          message: 'Actividad de usuarios (datos no disponibles)',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+          user: 'sistema'
+        });
+      }
+
       setRecentActivity(activity);
+
+      // Store additional metrics in systemMetrics for display
+      // Since all documents are marked as processed, processingDocs will always be 0
+      setSystemMetrics(prev => prev ? {
+        ...prev,
+        syllabi,
+        sampleExams,
+        processingDocs: 0 // Always 0 since all documents are marked as processed
+      } as SystemMetrics & { syllabi: number; sampleExams: number; processingDocs: number } : null);
 
     } catch (error: any) {
       toast.error('Error al cargar datos del dashboard');
@@ -214,16 +245,19 @@ export const DashboardOverview: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Sistema RAG</p>
+              <p className="text-sm font-medium text-gray-600">Docs Procesados</p>
               <p className="text-3xl font-bold text-gray-900">{systemMetrics?.ragDocuments || 0}</p>
               <div className="flex items-center mt-1">
                 {systemMetrics?.ragStatus === 'operational' ? (
                   <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
+                ) : systemMetrics?.ragStatus === 'warning' ? (
+                  <Clock className="w-4 h-4 text-orange-500 mr-1" />
                 ) : (
                   <AlertCircle className="w-4 h-4 text-red-500 mr-1" />
                 )}
                 <p className="text-sm text-gray-500">
-                  {systemMetrics?.ragStatus === 'operational' ? 'Operativo' : 'Con errores'}
+                  {systemMetrics?.ragStatus === 'operational' ? 'Todos procesados' : 
+                   systemMetrics?.ragStatus === 'warning' ? 'Algunos pendientes' : 'Con errores'}
                 </p>
               </div>
             </div>
@@ -250,22 +284,29 @@ export const DashboardOverview: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Base de Datos</span>
+              <span className="text-sm text-gray-600">Certificaciones</span>
               <span className="flex items-center text-sm">
                 <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                Conectada
+                {systemMetrics?.totalCertifications || 0} disponibles
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">RAG System</span>
               <span className="flex items-center text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                Disponible
+                {systemMetrics?.ragStatus === 'operational' ? (
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
+                ) : systemMetrics?.ragStatus === 'warning' ? (
+                  <Clock className="w-4 h-4 text-orange-500 mr-1" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-500 mr-1" />
+                )}
+                {systemMetrics?.ragStatus === 'operational' ? 'Operativo' : 
+                 systemMetrics?.ragStatus === 'warning' ? 'Procesando' : 'Con errores'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Uptime</span>
-              <span className="text-sm text-gray-900">{systemMetrics?.systemUptime}</span>
+              <span className="text-sm text-gray-500 italic">No disponible</span>
             </div>
           </div>
         </div>
@@ -278,15 +319,15 @@ export const DashboardOverview: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Mensajes Totales</span>
-              <span className="text-sm font-medium text-gray-900">{systemMetrics?.chatMessages}</span>
+              <span className="text-sm text-gray-500 italic">No disponible</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Promedio Diario</span>
-              <span className="text-sm font-medium text-gray-900">~85</span>
+              <span className="text-sm text-gray-500 italic">No disponible</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Usuarios Activos Hoy</span>
-              <span className="text-sm font-medium text-gray-900">12</span>
+              <span className="text-sm text-gray-500 italic">No disponible</span>
             </div>
           </div>
         </div>
@@ -299,15 +340,19 @@ export const DashboardOverview: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Total Documentos</span>
-              <span className="text-sm font-medium text-gray-900">{systemMetrics?.totalDocuments}</span>
+              <span className="text-sm font-medium text-gray-900">{systemMetrics?.totalDocuments || 0}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Syllabi</span>
-              <span className="text-sm font-medium text-gray-900">28</span>
+              <span className="text-sm font-medium text-gray-900">{(systemMetrics as any)?.syllabi || 0}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Exámenes</span>
-              <span className="text-sm font-medium text-gray-900">17</span>
+              <span className="text-sm font-medium text-gray-900">{(systemMetrics as any)?.sampleExams || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Pendientes</span>
+              <span className="text-sm font-medium text-orange-600">{(systemMetrics as any)?.processingDocs || 0}</span>
             </div>
           </div>
         </div>

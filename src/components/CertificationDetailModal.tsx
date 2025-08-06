@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Award, ExternalLink, FileText, Upload, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { CertificationWithDocuments } from '../types/api';
+import apiService from '../services/api';
 
 interface CertificationDetailModalProps {
   certification: CertificationWithDocuments;
@@ -17,6 +19,7 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
   onDocumentsChanged,
   onUploadDocument
 }) => {
+  const [isReprocessing, setIsReprocessing] = useState(false);
   const getDocumentTypeIcon = (type: 'syllabus' | 'sample_exam') => {
     return type === 'syllabus' ? (
       <FileText className="w-4 h-4 text-blue-500" />
@@ -27,6 +30,29 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
 
   const getDocumentTypeLabel = (type: 'syllabus' | 'sample_exam') => {
     return type === 'syllabus' ? 'Syllabus' : 'Examen de Muestra';
+  };
+
+  const handleReprocess = async () => {
+    if (!certification.documents || certification.documents.length === 0) {
+      toast.warning('No hay documentos para reprocesar');
+      return;
+    }
+
+    setIsReprocessing(true);
+    try {
+      await apiService.reprocessCertificationDocuments(certification.id);
+      toast.success('Reprocesamiento iniciado. Los documentos se actualizarán en unos momentos.');
+      
+      // Actualizar la lista después de un pequeño delay para permitir que el backend inicie el procesamiento
+      setTimeout(() => {
+        onDocumentsChanged();
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error al reprocesar documentos:', error);
+      toast.error(error.message || 'Error al reprocesar documentos');
+    } finally {
+      setIsReprocessing(false);
+    }
   };
 
   const getDocumentTypeBadgeColor = (type: 'syllabus' | 'sample_exam') => {
@@ -124,7 +150,10 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                         <p className="text-xs text-blue-600">documento(s)</p>
                       </div>
                       <button
-                        onClick={() => onUploadDocument(certification.id, certification.name, 'syllabus')}
+                        onClick={() => {
+                          onUploadDocument(certification.id, certification.name, 'syllabus');
+                          onClose();
+                        }}
                         className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors"
                         title="Subir Syllabus"
                       >
@@ -141,7 +170,10 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                         <p className="text-xs text-green-600">documento(s)</p>
                       </div>
                       <button
-                        onClick={() => onUploadDocument(certification.id, certification.name, 'sample_exam')}
+                        onClick={() => {
+                          onUploadDocument(certification.id, certification.name, 'sample_exam');
+                          onClose();
+                        }}
                         className="p-2 bg-green-100 hover:bg-green-200 rounded-full transition-colors"
                         title="Subir Examen de Muestra"
                       >
@@ -175,14 +207,20 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                       </p>
                       <div className="mt-4 space-x-2">
                         <button
-                          onClick={() => onUploadDocument(certification.id, certification.name, 'syllabus')}
+                          onClick={() => {
+                            onUploadDocument(certification.id, certification.name, 'syllabus');
+                            onClose();
+                          }}
                           className="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
                         >
                           <FileText className="w-3 h-3 mr-1" />
                           Subir Syllabus
                         </button>
                         <button
-                          onClick={() => onUploadDocument(certification.id, certification.name, 'sample_exam')}
+                          onClick={() => {
+                            onUploadDocument(certification.id, certification.name, 'sample_exam');
+                            onClose();
+                          }}
                           className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors"
                         >
                           <Award className="w-3 h-3 mr-1" />
@@ -232,22 +270,49 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
+              <div className="mt-6 flex justify-between">
                 <button
                   type="button"
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  onClick={onClose}
+                  className="inline-flex items-center px-4 py-2 border border-orange-300 shadow-sm text-sm font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                  onClick={handleReprocess}
+                  disabled={isReprocessing}
                 >
-                  Cerrar
+                  {isReprocessing ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-orange-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Reprocesando...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reprocesar Documentos
+                    </>
+                  )}
                 </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  onClick={() => onUploadDocument(certification.id, certification.name, 'syllabus')}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Subir Documentos
-                </button>
+                
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    onClick={onClose}
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    onClick={() => {
+                      onUploadDocument(certification.id, certification.name, 'syllabus');
+                      onClose();
+                    }}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Subir Documentos
+                  </button>
+                </div>
               </div>
             </div>
           </div>

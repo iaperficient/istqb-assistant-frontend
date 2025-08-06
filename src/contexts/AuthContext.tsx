@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserInfo } from '../types/api';
 import apiService from '../services/api';
 import { toast } from 'react-toastify';
@@ -28,17 +29,27 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const checkAuthStatus = () => {
+    const checkAuthStatus = async () => {
       const isAuth = apiService.isAuthenticated();
       if (isAuth) {
         const userData = localStorage.getItem('user_data');
         if (userData) {
-          setUser(JSON.parse(userData));
+          try {
+            const currentUser = await apiService.getCurrentUser();
+            setUser(currentUser);
+            localStorage.setItem('user_data', JSON.stringify(currentUser));
+          } catch (error) {
+            console.log('Token validation failed, clearing auth data');
+            apiService.logout();
+            localStorage.removeItem('user_data');
+            setUser(null);
+          }
         }
       }
       setIsLoading(false);
@@ -51,12 +62,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('user_data');
       sessionStorage.clear();
       localStorage.removeItem('conversation_id');
-      toast.error('Session expired. Please sign in again.');
-      window.location.href = '/login';
+      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      navigate('/auth', { replace: true });
     };
 
     window.addEventListener('tokenExpired', handleTokenExpired);
-
     return () => {
       window.removeEventListener('tokenExpired', handleTokenExpired);
     };
@@ -65,19 +75,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
-      // Clear all storage before login to prevent old data reuse
       localStorage.clear();
       sessionStorage.clear();
-      // Remove any lingering conversation_id
       localStorage.removeItem('conversation_id');
 
       const tokenData = await apiService.login({ username, password });
       const userData = await apiService.getCurrentUser();
       setUser(userData);
       localStorage.setItem('user_data', JSON.stringify(userData));
-      toast.success(`Welcome${userData.is_admin ? ' Admin' : ''} to the ISTQB Assistant!`);
-      // Redirect to main page after successful login
-      window.location.href = '/';
+
+      toast.success(`¡Bienvenido${userData.is_admin ? ' Admin' : ''} al Asistente ISTQB!`);
+
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (error: any) {
       toast.error(error.message || 'Error signing in');
       throw error;
@@ -90,7 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       await apiService.register({ username, email, password });
-      toast.success('Registration successful. You can now sign in.');
+      toast.success('Registro exitoso. Ya puedes iniciar sesión.');
     } catch (error: any) {
       toast.error(error.message || 'Error registering user');
       throw error;
@@ -100,17 +110,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = (): void => {
-    // Call backend logout endpoint
     apiService.logout();
-    // Clear all user/session/conversation data
     setUser(null);
     localStorage.clear();
     sessionStorage.clear();
-    // Remove any lingering conversation_id
     localStorage.removeItem('conversation_id');
-    toast.info('Successfully logged out');
-    // Redirect to login page
-    window.location.href = '/login';
+    toast.info('Sesión cerrada correctamente');
+    navigate('/auth', { replace: true });
   };
 
   const value: AuthContextType = {
