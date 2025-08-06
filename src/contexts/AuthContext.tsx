@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleTokenExpired = () => {
       setUser(null);
       localStorage.removeItem('user_data');
-      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      toast.error('Session expired. Please sign in again.');
     };
 
     window.addEventListener('tokenExpired', handleTokenExpired);
@@ -68,9 +68,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setUser(userData);
       localStorage.setItem('user_data', JSON.stringify(userData));
-      toast.success(`¡Bienvenido${userData.is_admin ? ' Admin' : ''} al Asistente ISTQB!`);
+      toast.success(`Welcome${userData.is_admin ? ' Admin' : ''} to the ISTQB Assistant!`);
     } catch (error: any) {
-      toast.error(error.message || 'Error al iniciar sesión');
+      toast.error(error.message || 'Error signing in');
       throw error;
     } finally {
       setIsLoading(false);

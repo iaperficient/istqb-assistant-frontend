@@ -16,6 +16,40 @@ export const ChatPage: React.FC = () => {
   const [selectedCertification, setSelectedCertification] = useState<string | null>(null);
   const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
   const [conversations, setConversations] = useState<{ id: string; label: string; startDate: string }[]>([]);
+  const [chatList, setChatList] = useState<any[]>([]);
+  
+  // Fetch chat list after login (token available)
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    fetch("http://localhost:8000/chat?skip=0&limit=100", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      }
+    })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then(data => {
+      setChatList(data);
+    })
+    .catch(err => console.error("Error loading chat list", err));
+  }, []);
+  
+  // Function to select chat from chatList
+  const selectChat = (chatId: string) => {
+    setActiveConversationId(chatId);
+    setConversationId(chatId);
+  };
+  
+  // Render chat list in sidebar (replaces previous conversations rendering)
+  // This will be handled in the ConversationSidebar component, so we need to pass chatList and selectChat there
+  // We'll update ConversationSidebar props accordingly
   const [activeConversationId, setActiveConversationId] = useState<string | null>(conversationId);
   const [message, setMessage] = useState('');
 
@@ -78,6 +112,67 @@ export const ChatPage: React.FC = () => {
       setMessagesForConversation(newId, [defaultSystemMessage]);
       setMessages([defaultSystemMessage]);
     }
+  }, []);
+
+  // Fetch chat history from backend when activeConversationId changes
+  useEffect(() => {
+    const fetchChatHistory = async (convId: string) => {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`http://localhost:8000/chat/history/${convId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setMessagesForConversation(convId, data);
+        setMessages(data);
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      }
+    };
+
+    if (activeConversationId) {
+      fetchChatHistory(activeConversationId);
+    }
+  }, [activeConversationId]);
+
+  // Fetch conversation history from backend on load
+  useEffect(() => {
+    const fetchConversationHistory = async () => {
+      const lastConversationId = localStorage.getItem('conversation_id');
+      const token = localStorage.getItem('access_token');
+      if (lastConversationId && token) {
+        try {
+          const serverMessages = await apiService.getChatHistory(lastConversationId);
+          const localMessages = getMessagesForConversation(lastConversationId);
+
+          // Merge messages avoiding duplicates
+          const mergedMessages = [
+            ...localMessages,
+            ...serverMessages.filter(
+              (serverMessage) => !localMessages.some((localMessage) => localMessage.id === serverMessage.id)
+            ),
+          ];
+
+          setMessagesForConversation(lastConversationId, mergedMessages);
+          setMessages(mergedMessages);
+          setConversationId(lastConversationId);
+        } catch (error) {
+          console.error('Error fetching conversation history on load:', error);
+        }
+      }
+    };
+
+    fetchConversationHistory();
   }, []);
 
   const handleSendMessage = (message: string, voiceInput?: boolean) => {
