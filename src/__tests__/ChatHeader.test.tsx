@@ -4,11 +4,29 @@ import '@testing-library/jest-dom';
 import { ChatHeader } from '../components/ChatHeader';
 import { AuthContext } from '../contexts/AuthContext';
 
-const mockUser = { username: 'admin', is_admin: true };
+const mockUser = {
+  id: 1,
+  username: 'admin',
+  email: 'admin@example.com',
+  role: 'admin',
+  is_admin: true,
+  is_active: true,
+  created_at: '2023-01-01T00:00:00Z',
+};
 
 const renderWithAuth = (user = mockUser, isAdmin = true) => {
   return render(
-    <AuthContext.Provider value={{ user, logout: jest.fn(), isAdmin }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        isAdmin,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: jest.fn(),
+      }}
+    >
       <ChatHeader />
     </AuthContext.Provider>
   );

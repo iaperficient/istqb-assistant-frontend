@@ -171,24 +171,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <div className="mb-3 flex space-x-2 justify-center">
           <button
             type="button"
-            onClick={() => setMessage("How can I prepare for an ISTQB exam?")}
+            onClick={() => setMessage("Generate a mock exam to evaluate my knowledge")}
             className="bg-pink-100 text-pink-800 hover:opacity-80 px-3 py-1 rounded-full text-sm"
           >
-            How can I prepare for an ISTQB exam?
+            Generate a mock exam to evaluate my knowledge
           </button>
           <button
             type="button"
-            onClick={() => setMessage("What certifications does ISTQB offer?")}
+            onClick={() => setMessage("Create a personalized study plan for me")}
             className="bg-green-100 text-green-800 hover:opacity-80 px-3 py-1 rounded-full text-sm"
           >
-            What certifications does ISTQB offer?
+            Create a personalized study plan for me
           </button>
           <button
             type="button"
-            onClick={() => setMessage("What is the ISTQB Foundation Level?")}
+            onClick={() => setMessage("Explain the different ISTQB certification levels")}
             className="bg-blue-100 text-blue-800 hover:opacity-80 px-3 py-1 rounded-full text-sm"
           >
-            What is the ISTQB Foundation Level?
+            Explain the different ISTQB certification levels
           </button>
         </div>
       )}

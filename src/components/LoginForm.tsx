@@ -45,7 +45,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             <LogIn className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome</h2>
-          <p className="text-gray-600">ISTQB Assistant for Certifications</p>
+          <p className="text-gray-600">ISTQB AI Assistant</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
