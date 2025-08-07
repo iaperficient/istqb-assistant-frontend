@@ -18,9 +18,8 @@ import {
   ApiError
 } from '../types/api';
 
-// Base de URL: le quitamos barra final y añadimos /api
+// Base URL: backend root (sin barra final)
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001').replace(/\/$/, '');
-const API_BASE = `${BASE_URL}/api`;
 
 class ApiService {
   private api: AxiosInstance;
@@ -28,12 +27,9 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: API_BASE, // ahora todas las rutas son /api/...
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      baseURL: BASE_URL, // raíz del backend, SIN /api fijo
+      headers: { 'Content-Type': 'application/json' },
     });
-
     this.setupInterceptors();
   }
 
@@ -53,17 +49,14 @@ class ApiService {
       (response) => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
-        
         if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
           originalRequest._retry = true;
-          
           try {
             if (this.tokenRefreshPromise) {
               const newToken = await this.tokenRefreshPromise;
               originalRequest.headers!.Authorization = `Bearer ${newToken}`;
               return this.api(originalRequest);
             }
-            
             this.handleTokenExpiration();
             return Promise.reject(this.createApiError('Session expired', 401));
           } catch (refreshError) {
@@ -71,7 +64,6 @@ class ApiService {
             return Promise.reject(refreshError);
           }
         }
-
         return Promise.reject(this.handleError(error));
       }
     );
@@ -87,100 +79,62 @@ class ApiService {
         return this.createApiError(data.detail, error.response.status);
       }
     }
-    
-    return this.createApiError(
-      (error as any)?.message || 'An unexpected error occurred',
-      error.response?.status
-    );
+    return this.createApiError((error as any)?.message || 'An unexpected error occurred', error.response?.status);
   }
 
   private createApiError(message: string, status?: number): ApiError {
     return { message, status };
   }
 
-  private getToken(): string | null {
-    return localStorage.getItem('access_token');
-  }
-
-  private setToken(token: string): void {
-    localStorage.setItem('access_token', token);
-  }
-
-  private removeToken(): void {
-    localStorage.removeItem('access_token');
-  }
-
+  private getToken(): string | null { return localStorage.getItem('access_token'); }
+  private setToken(token: string): void { localStorage.setItem('access_token', token); }
+  private removeToken(): void { localStorage.removeItem('access_token'); }
   private handleTokenExpiration(): void {
     this.removeToken();
     window.dispatchEvent(new CustomEvent('tokenExpired'));
   }
 
-  // ---------- Auth ----------
+  // ---------- Auth (probablemente SIN /api) ----------
   async register(userData: UserCreate): Promise<UserResponse> {
-    try {
-      const response = await this.api.post<UserResponse>('/auth/register', userData);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const res = await this.api.post<UserResponse>('/auth/register', userData);
+    return res.data;
   }
 
   async login(loginData: LoginData): Promise<Token> {
-    try {
-      const formData = new URLSearchParams();
-      formData.append('username', loginData.username);
-      formData.append('password', loginData.password);
+    const formData = new URLSearchParams();
+    formData.append('username', loginData.username);
+    formData.append('password', loginData.password);
 
-      const response = await this.api.post<Token>('/auth/login', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
-
-      this.setToken(response.data.access_token);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const res = await this.api.post<Token>('/auth/login', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    this.setToken(res.data.access_token);
+    return res.data;
   }
 
   async getCurrentUser(): Promise<UserInfo> {
-    try {
-      const response = await this.api.get<UserInfo>('/auth/me');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const res = await this.api.get<UserInfo>('/auth/me');
+    return res.data;
   }
 
-  // ---------- Chat ----------
+  // ---------- Chat (con prefijo /api) ----------
   async chat(message: ChatMessage): Promise<ChatResponse> {
-    try {
-      // POST correcto: /api/chat/
-      const response = await this.api.post<ChatResponse>('/chat/', message);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const res = await this.api.post<ChatResponse>('/api/chat/', message);
+    return res.data;
   }
 
   async getChatHistory(conversationId?: string): Promise<any[]> {
-    try {
-      // El backend espera conversation_id como query param en /api/chat/history
-      const response = await this.api.get<any[]>('/chat/history', {
-        params: conversationId ? { conversation_id: conversationId } : {}
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const res = await this.api.get<any[]>('/api/chat/history', {
+      params: conversationId ? { conversation_id: conversationId } : {}
+    });
+    return res.data;
   }
 
   // ---------- Admin ----------
   async getUserStats(): Promise<UserStats> {
     try {
-      const response = await this.api.get('/auth/admin/stats');
-      const data = response.data as any;
+      const res = await this.api.get('/auth/admin/stats');
+      const data = res.data as any;
       return {
         total_users: data?.total_users || 0,
         active_users: data?.active_users || 0,
@@ -188,268 +142,111 @@ class ApiService {
         regular_users: data?.regular_users || 0,
         recent_signups: data?.recent_signups || 0
       };
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      return {
-        total_users: 0,
-        active_users: 0,
-        admin_users: 0,
-        regular_users: 0,
-        recent_signups: 0
-      };
+    } catch {
+      return { total_users: 0, active_users: 0, admin_users: 0, regular_users: 0, recent_signups: 0 };
     }
   }
 
   async getAllUsers(page: number = 1, perPage: number = 10): Promise<UserListResponse> {
-    try {
-      // Demo temporal
-      const currentUser = await this.getCurrentUser();
-      const users: UserResponse[] = [{
-        id: currentUser.id,
-        username: currentUser.username,
-        email: currentUser.email,
-        role: currentUser.role,
-        is_active: currentUser.is_active,
-        created_at: currentUser.created_at,
-        updated_at: undefined
-      }];
-
-      return {
-        users,
-        total: users.length,
-        page,
-        per_page: perPage
-      };
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const currentUser = await this.getCurrentUser();
+    const users: UserResponse[] = [{
+      id: currentUser.id,
+      username: currentUser.username,
+      email: currentUser.email,
+      role: currentUser.role,
+      is_active: currentUser.is_active,
+      created_at: currentUser.created_at,
+      updated_at: undefined
+    }];
+    return { users, total: users.length, page, per_page: perPage };
   }
 
   async deactivateUser(userId: number): Promise<void> {
-    try {
-      await this.api.put(`/auth/users/${userId}/deactivate`);
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    await this.api.put(`/auth/users/${userId}/deactivate`);
   }
 
   async deleteUser(userId: number): Promise<void> {
-    try {
-      console.log(`Would delete user ${userId}`);
-      // await this.api.delete(`/auth/users/${userId}`);
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    console.log(`Would delete user ${userId}`);
+    // await this.api.delete(`/auth/users/${userId}`);
   }
 
-  // ---------- Certifications ----------
-  async getCertifications(skip: number = 0, limit: number = 100): Promise<CertificationResponse[]> {
+  // ---------- Certifications (con prefijo /api) ----------
+  async getCertifications(skip = 0, limit = 100): Promise<CertificationResponse[]> {
     try {
-      const response = await this.api.get<CertificationResponse[]>('/certifications/', {
-        params: { skip, limit }
-      });
-      return response.data;
-    } catch (error) {
+      const res = await this.api.get<CertificationResponse[]>('/api/certifications/', { params: { skip, limit } });
+      return res.data;
+    } catch {
       console.log('Certifications endpoint not available, returning mock data');
       return this.getMockCertifications();
     }
   }
 
-  async createCertification(certificationData: CertificationCreate): Promise<CertificationResponse> {
-    try {
-      const response = await this.api.post<CertificationResponse>('/certifications/', certificationData);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+  async createCertification(data: CertificationCreate): Promise<CertificationResponse> {
+    const res = await this.api.post<CertificationResponse>('/api/certifications/', data);
+    return res.data;
   }
 
   async getCertificationWithDocuments(certificationId: number): Promise<CertificationWithDocuments> {
-    try {
-      const response = await this.api.get<CertificationWithDocuments>(`/certifications/${certificationId}`);
-      const certification = response.data;
-      if (certification.documents) {
-        certification.documents = certification.documents.map(doc => ({
-          ...doc,
-          is_processed: true
-        }));
-      }
-      return certification;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
+    const res = await this.api.get<CertificationWithDocuments>(`/api/certifications/${certificationId}`);
+    const certification = res.data;
+    if (certification.documents) {
+      certification.documents = certification.documents.map(doc => ({ ...doc, is_processed: true }));
     }
+    return certification;
   }
 
   async deleteCertification(certificationId: number): Promise<void> {
-    try {
-      await this.api.delete(`/certifications/${certificationId}`);
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    await this.api.delete(`/api/certifications/${certificationId}`);
   }
 
   async getCertificationDocuments(certificationId: number): Promise<DocumentResponse[]> {
-    try {
-      const response = await this.api.get<DocumentResponse[]>(`/certifications/${certificationId}/documents`);
-      return response.data.map(doc => ({
-        ...doc,
-        is_processed: true
-      }));
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const res = await this.api.get<DocumentResponse[]>(`/api/certifications/${certificationId}/documents`);
+    return res.data.map(doc => ({ ...doc, is_processed: true }));
   }
 
   async uploadSyllabus(certificationId: number, documentData: DocumentUpload): Promise<DocumentUploadResponse> {
-    try {
-      const formData = new FormData();
-      formData.append('title', documentData.title);
-      formData.append('file', documentData.file);
-
-      const response = await this.api.post(`/certifications/${certificationId}/documents/syllabus`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      const processedDocument = response.data?.document ? {
-        ...response.data.document,
-        is_processed: true
-      } : undefined;
-
-      return {
-        success: true,
-        message: response.data?.message || 'Syllabus subido exitosamente',
-        document: processedDocument
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (
-        axiosError.response?.status === 409 ||
-        (axiosError.response?.data as any)?.detail?.includes('duplicate') ||
-        (axiosError.response?.data as any)?.detail?.includes('already exists')
-      ) {
-        return {
-          success: false,
-          message: 'Este documento ya existe para esta certificación',
-          is_duplicate: true,
-          existing_document: (axiosError.response?.data as any)?.existing_document
-        };
-      }
-      throw this.handleError(axiosError);
-    }
+    const formData = new FormData();
+    formData.append('title', documentData.title);
+    formData.append('file', documentData.file);
+    const res = await this.api.post(`/api/certifications/${certificationId}/documents/syllabus`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const processedDocument = res.data?.document ? { ...res.data.document, is_processed: true } : undefined;
+    return { success: true, message: res.data?.message || 'Syllabus subido exitosamente', document: processedDocument };
   }
 
   async uploadSampleExam(certificationId: number, documentData: DocumentUpload): Promise<DocumentUploadResponse> {
-    try {
-      const formData = new FormData();
-      formData.append('title', documentData.title);
-      formData.append('file', documentData.file);
-
-      const response = await this.api.post(`/certifications/${certificationId}/documents/sample-exam`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      const processedDocument = response.data?.document ? {
-        ...response.data.document,
-        is_processed: true
-      } : undefined;
-
-      return {
-        success: true,
-        message: response.data?.message || 'Examen de muestra subido exitosamente',
-        document: processedDocument
-      };
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (
-        axiosError.response?.status === 409 ||
-        (axiosError.response?.data as any)?.detail?.includes('duplicate') ||
-        (axiosError.response?.data as any)?.detail?.includes('already exists')
-      ) {
-        return {
-          success: false,
-          message: 'Este documento ya existe para esta certificación',
-          is_duplicate: true,
-          existing_document: (axiosError.response?.data as any)?.existing_document
-        };
-      }
-      throw this.handleError(axiosError);
-    }
+    const formData = new FormData();
+    formData.append('title', documentData.title);
+    formData.append('file', documentData.file);
+    const res = await this.api.post(`/api/certifications/${certificationId}/documents/sample-exam`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const processedDocument = res.data?.document ? { ...res.data.document, is_processed: true } : undefined;
+    return { success: true, message: res.data?.message || 'Examen de muestra subido exitosamente', document: processedDocument };
   }
 
   async reprocessCertificationDocuments(certificationId: number): Promise<void> {
-    try {
-      await this.api.post(`/certifications/${certificationId}/reprocess`);
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    await this.api.post(`/api/certifications/${certificationId}/reprocess`);
   }
 
   // ---------- Misceláneo ----------
   private getMockCertifications(): CertificationResponse[] {
     return [
-      {
-        id: 1,
-        code: 'ISTQB-FL',
-        name: 'ISTQB Foundation Level',
-        url: 'https://www.istqb.org/certifications/foundation-level',
-        description: 'Certificación base de ISTQB que cubre los fundamentos del testing de software',
-        version: 'v4.0',
-        is_active: true,
-        created_at: '2024-01-15T10:00:00Z',
-        updated_at: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: 2,
-        code: 'ISTQB-AL-TM',
-        name: 'ISTQB Advanced Level - Test Manager',
-        url: 'https://www.istqb.org/certifications/advanced-level',
-        description: 'Certificación avanzada enfocada en gestión de testing',
-        version: 'v3.0',
-        is_active: true,
-        created_at: '2024-01-20T14:30:00Z',
-        updated_at: '2024-01-20T14:30:00Z'
-      },
-      {
-        id: 3,
-        code: 'ISTQB-AL-TA',
-        name: 'ISTQB Advanced Level - Technical Test Analyst',
-        url: 'https://www.istqb.org/certifications/advanced-level',
-        description: 'Certificación avanzada para analistas técnicos de testing',
-        version: 'v3.0',
-        is_active: true,
-        created_at: '2024-02-01T09:15:00Z',
-        updated_at: '2024-02-01T09:15:00Z'
-      },
-      {
-        id: 4,
-        code: 'ISTQB-EL-TM',
-        name: 'ISTQB Expert Level - Test Management',
-        url: 'https://www.istqb.org/certifications/expert-level',
-        description: 'Certificación de nivel experto en gestión de testing',
-        version: 'v2.0',
-        is_active: false,
-        created_at: '2024-02-10T16:45:00Z',
-        updated_at: '2024-02-10T16:45:00Z'
-      }
+      { id: 1, code: 'ISTQB-FL', name: 'ISTQB Foundation Level', url: 'https://www.istqb.org/certifications/foundation-level', description: 'Certificación base de ISTQB que cubre los fundamentos del testing de software', version: 'v4.0', is_active: true, created_at: '2024-01-15T10:00:00Z', updated_at: '2024-01-15T10:00:00Z' },
+      { id: 2, code: 'ISTQB-AL-TM', name: 'ISTQB Advanced Level - Test Manager', url: 'https://www.istqb.org/certifications/advanced-level', description: 'Certificación avanzada enfocada en gestión de testing', version: 'v3.0', is_active: true, created_at: '2024-01-20T14:30:00Z', updated_at: '2024-01-20T14:30:00Z' },
+      { id: 3, code: 'ISTQB-AL-TA', name: 'ISTQB Advanced Level - Technical Test Analyst', url: 'https://www.istqb.org/certifications/advanced-level', description: 'Certificación avanzada para analistas técnicos de testing', version: 'v3.0', is_active: true, created_at: '2024-02-01T09:15:00Z', updated_at: '2024-02-01T09:15:00Z' },
+      { id: 4, code: 'ISTQB-EL-TM', name: 'ISTQB Expert Level - Test Management', url: 'https://www.istqb.org/certifications/expert-level', description: 'Certificación de nivel experto en gestión de testing', version: 'v2.0', is_active: false, created_at: '2024-02-10T16:45:00Z', updated_at: '2024-02-10T16:45:00Z' }
     ];
   }
 
   async healthCheck(): Promise<any> {
-    try {
-      const response = await this.api.get('/health');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
+    const res = await this.api.get('/health');
+    return res.data;
   }
 
-  logout(): void {
-    this.removeToken();
-  }
-
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  }
+  logout(): void { this.removeToken(); }
+  isAuthenticated(): boolean { return !!this.getToken(); }
 }
 
 export default new ApiService();
