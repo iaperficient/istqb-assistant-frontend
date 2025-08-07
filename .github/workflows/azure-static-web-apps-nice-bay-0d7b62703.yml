@@ -20,11 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          submodules: true
+          submodules: false  # Disable auto submodule update
           lfs: false
       - name: Fix .git directory permissions
-        run: sudo chown -R $(whoami) .git || chown -R $(whoami) .git
-        shell: bash
+        run: |
+          sudo chown -R $(whoami) .git || chown -R $(whoami) .git
+      - name: Update submodules
+        run: git submodule update --init --recursive
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
       - name: Get Id Token
