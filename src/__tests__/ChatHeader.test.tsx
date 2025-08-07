@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/vitest';
 import { vi, describe, it, expect } from 'vitest';
 import { ChatHeader } from '../components/ChatHeader';
@@ -17,19 +18,21 @@ const mockUser = {
 
 const renderWithAuth = (user = mockUser, isAdmin = true) => {
   return render(
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: true,
-        isLoading: false,
-        isAdmin,
-        login: vi.fn(),
-        register: vi.fn(),
-        logout: vi.fn(),
-      }}
-    >
-      <ChatHeader />
-    </AuthContext.Provider>
+    <MemoryRouter>
+      <AuthContext.Provider
+        value={{
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          isAdmin,
+          login: vi.fn(),
+          register: vi.fn(),
+          logout: vi.fn(),
+        }}
+      >
+        <ChatHeader />
+      </AuthContext.Provider>
+    </MemoryRouter>
   );
 };
 
