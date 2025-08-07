@@ -18,7 +18,9 @@ import {
   ApiError
 } from '../types/api';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+// Base de URL: le quitamos barra final y añadimos /api
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8001').replace(/\/$/, '');
+const API_BASE = `${BASE_URL}/api`;
 
 class ApiService {
   private api: AxiosInstance;
@@ -26,7 +28,7 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: BASE_URL,
+      baseURL: API_BASE, // ahora todas las rutas son /api/...
       headers: {
         'Content-Type': 'application/json',
       },
@@ -40,7 +42,7 @@ class ApiService {
       (config) => {
         const token = this.getToken();
         if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`;
+          (config.headers as any).Authorization = `Bearer ${token}`;
         }
         return config;
       },
@@ -87,7 +89,7 @@ class ApiService {
     }
     
     return this.createApiError(
-      error.message || 'An unexpected error occurred',
+      (error as any)?.message || 'An unexpected error occurred',
       error.response?.status
     );
   }
@@ -113,6 +115,7 @@ class ApiService {
     window.dispatchEvent(new CustomEvent('tokenExpired'));
   }
 
+  // ---------- Auth ----------
   async register(userData: UserCreate): Promise<UserResponse> {
     try {
       const response = await this.api.post<UserResponse>('/auth/register', userData);
@@ -141,24 +144,6 @@ class ApiService {
     }
   }
 
-  async chat(message: ChatMessage): Promise<ChatResponse> {
-    try {
-      const response = await this.api.post<ChatResponse>('/chat/', message);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
-  async getChatHistory(conversationId: string): Promise<any[]> {
-    try {
-      const response = await this.api.get<any[]>(`/chat/history/${conversationId}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
   async getCurrentUser(): Promise<UserInfo> {
     try {
       const response = await this.api.get<UserInfo>('/auth/me');
@@ -168,14 +153,34 @@ class ApiService {
     }
   }
 
-  // Admin functions
+  // ---------- Chat ----------
+  async chat(message: ChatMessage): Promise<ChatResponse> {
+    try {
+      // POST correcto: /api/chat/
+      const response = await this.api.post<ChatResponse>('/chat/', message);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async getChatHistory(conversationId?: string): Promise<any[]> {
+    try {
+      // El backend espera conversation_id como query param en /api/chat/history
+      const response = await this.api.get<any[]>('/chat/history', {
+        params: conversationId ? { conversation_id: conversationId } : {}
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  // ---------- Admin ----------
   async getUserStats(): Promise<UserStats> {
     try {
       const response = await this.api.get('/auth/admin/stats');
-      // The API now returns a generic response, so we handle it accordingly
-      const data = response.data;
-      
-      // Map the response to our expected format
+      const data = response.data as any;
       return {
         total_users: data?.total_users || 0,
         active_users: data?.active_users || 0,
@@ -185,7 +190,6 @@ class ApiService {
       };
     } catch (error) {
       console.error('Error fetching user stats:', error);
-      // Return default values if the endpoint fails
       return {
         total_users: 0,
         active_users: 0,
@@ -198,9 +202,8 @@ class ApiService {
 
   async getAllUsers(page: number = 1, perPage: number = 10): Promise<UserListResponse> {
     try {
-      // For now, return current user as demo data since we don't have the actual endpoint
+      // Demo temporal
       const currentUser = await this.getCurrentUser();
-      
       const users: UserResponse[] = [{
         id: currentUser.id,
         username: currentUser.username,
@@ -232,7 +235,6 @@ class ApiService {
 
   async deleteUser(userId: number): Promise<void> {
     try {
-      // This endpoint might not exist yet - simulate for now
       console.log(`Would delete user ${userId}`);
       // await this.api.delete(`/auth/users/${userId}`);
     } catch (error) {
@@ -240,17 +242,14 @@ class ApiService {
     }
   }
 
-  // Certification Management Functions
+  // ---------- Certifications ----------
   async getCertifications(skip: number = 0, limit: number = 100): Promise<CertificationResponse[]> {
     try {
-      const params = new URLSearchParams({
-        skip: skip.toString(),
-        limit: limit.toString()
+      const response = await this.api.get<CertificationResponse[]>('/certifications/', {
+        params: { skip, limit }
       });
-      const response = await this.api.get<CertificationResponse[]>(`/certifications/?${params}`);
       return response.data;
     } catch (error) {
-      // Return mock data if endpoint doesn't exist yet
       console.log('Certifications endpoint not available, returning mock data');
       return this.getMockCertifications();
     }
@@ -269,15 +268,12 @@ class ApiService {
     try {
       const response = await this.api.get<CertificationWithDocuments>(`/certifications/${certificationId}`);
       const certification = response.data;
-      
-      // Always mark all documents as processed for now
       if (certification.documents) {
         certification.documents = certification.documents.map(doc => ({
           ...doc,
           is_processed: true
         }));
       }
-      
       return certification;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -295,7 +291,6 @@ class ApiService {
   async getCertificationDocuments(certificationId: number): Promise<DocumentResponse[]> {
     try {
       const response = await this.api.get<DocumentResponse[]>(`/certifications/${certificationId}/documents`);
-      // Always mark all documents as processed for now
       return response.data.map(doc => ({
         ...doc,
         is_processed: true
@@ -312,14 +307,9 @@ class ApiService {
       formData.append('file', documentData.file);
 
       const response = await this.api.post(`/certifications/${certificationId}/documents/syllabus`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
-      // If we get here, the upload was successful
-      // The API now returns a generic response, so we handle it accordingly
-      // Always mark documents as processed for now
+
       const processedDocument = response.data?.document ? {
         ...response.data.document,
         is_processed: true
@@ -332,11 +322,11 @@ class ApiService {
       };
     } catch (error) {
       const axiosError = error as AxiosError;
-      
-      // Handle duplicate document error
-      if (axiosError.response?.status === 409 || 
-          (axiosError.response?.data as any)?.detail?.includes('duplicate') ||
-          (axiosError.response?.data as any)?.detail?.includes('already exists')) {
+      if (
+        axiosError.response?.status === 409 ||
+        (axiosError.response?.data as any)?.detail?.includes('duplicate') ||
+        (axiosError.response?.data as any)?.detail?.includes('already exists')
+      ) {
         return {
           success: false,
           message: 'Este documento ya existe para esta certificación',
@@ -344,7 +334,6 @@ class ApiService {
           existing_document: (axiosError.response?.data as any)?.existing_document
         };
       }
-      
       throw this.handleError(axiosError);
     }
   }
@@ -356,14 +345,9 @@ class ApiService {
       formData.append('file', documentData.file);
 
       const response = await this.api.post(`/certifications/${certificationId}/documents/sample-exam`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // If we get here, the upload was successful
-      // The API now returns a generic response, so we handle it accordingly
-      // Always mark documents as processed for now
       const processedDocument = response.data?.document ? {
         ...response.data.document,
         is_processed: true
@@ -376,11 +360,11 @@ class ApiService {
       };
     } catch (error) {
       const axiosError = error as AxiosError;
-      
-      // Handle duplicate document error
-      if (axiosError.response?.status === 409 || 
-          (axiosError.response?.data as any)?.detail?.includes('duplicate') ||
-          (axiosError.response?.data as any)?.detail?.includes('already exists')) {
+      if (
+        axiosError.response?.status === 409 ||
+        (axiosError.response?.data as any)?.detail?.includes('duplicate') ||
+        (axiosError.response?.data as any)?.detail?.includes('already exists')
+      ) {
         return {
           success: false,
           message: 'Este documento ya existe para esta certificación',
@@ -388,7 +372,6 @@ class ApiService {
           existing_document: (axiosError.response?.data as any)?.existing_document
         };
       }
-      
       throw this.handleError(axiosError);
     }
   }
@@ -401,7 +384,7 @@ class ApiService {
     }
   }
 
-  // Mock data for when endpoints are not available
+  // ---------- Misceláneo ----------
   private getMockCertifications(): CertificationResponse[] {
     return [
       {
