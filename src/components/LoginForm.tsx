@@ -7,8 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../utils/cn';
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'El nombre de usuario es requerido'),
-  password: z.string().min(1, 'La contraseña es requerida'),
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -44,14 +44,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           <div className="mx-auto w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center mb-4">
             <LogIn className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Bienvenido</h2>
-          <p className="text-gray-600">Asistente ISTQB para Certificaciones</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome</h2>
+          <p className="text-gray-600">ISTQB AI Assistant</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Usuario
+              Username
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -65,7 +65,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
                   'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200',
                   errors.username && 'border-red-500 focus:ring-red-500'
                 )}
-                placeholder="Ingresa tu usuario"
+                placeholder="Enter your username"
               />
             </div>
             {errors.username && (
@@ -75,7 +75,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña
+              Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -89,7 +89,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
                   'w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200',
                   errors.password && 'border-red-500 focus:ring-red-500'
                 )}
-                placeholder="Ingresa tu contraseña"
+                placeholder="Enter your password"
               />
               <button
                 type="button"
@@ -121,7 +121,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             ) : (
               <>
                 <LogIn className="h-5 w-5" />
-                <span>Iniciar Sesión</span>
+                <span>Sign In</span>
               </>
             )}
           </button>
@@ -129,13 +129,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
         <div className="mt-8 text-center">
           <p className="text-gray-600">
-            ¿No tienes una cuenta?{' '}
+            Don't have an account?{' '}
             <button
               type="button"
               onClick={onSwitchToRegister}
               className="text-primary-500 hover:text-primary-600 font-semibold transition-colors duration-200"
             >
-              Regístrate aquí
+              Register here
             </button>
           </p>
         </div>

@@ -14,15 +14,15 @@ export const ChatHeader: React.FC = () => {
           <Bot className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Asistente ISTQB</h1>
-          <p className="text-sm text-gray-500">Especialista en Certificaciones de Testing</p>
+          <h1 className="text-xl font-semibold text-gray-900">ISTQB Assistant</h1>
+          <p className="text-sm text-gray-500">Testing Certification Specialist</p>
         </div>
       </div>
       
       <div className="flex items-center space-x-4">
         <div className="hidden sm:block text-right">
           <div className="flex items-center justify-end space-x-2 mb-1">
-            <p className="text-sm font-medium text-gray-900">¡Hola, {user?.username}!</p>
+            <p className="text-sm font-medium text-gray-900">Hello, {user?.username}!</p>
             {isAdmin && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 <Shield className="w-3 h-3 mr-1" />
@@ -30,7 +30,7 @@ export const ChatHeader: React.FC = () => {
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500">¿En qué puedo ayudarte hoy?</p>
+          <p className="text-xs text-gray-500">How can I help you today?</p>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -38,7 +38,7 @@ export const ChatHeader: React.FC = () => {
             <button
               onClick={() => navigate('/admin')}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-              title="Panel de Administración"
+              title="Admin Panel"
             >
               <Shield className="h-5 w-5" />
             </button>
@@ -46,7 +46,7 @@ export const ChatHeader: React.FC = () => {
           
           <button
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-            title="Configuración"
+            title="Settings"
           >
             <Settings className="h-5 w-5" />
           </button>
@@ -54,7 +54,7 @@ export const ChatHeader: React.FC = () => {
           <button
             onClick={logout}
             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-            title="Cerrar sesión"
+            title="Sign Out"
           >
             <LogOut className="h-5 w-5" />
           </button>

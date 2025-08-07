@@ -53,14 +53,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
           <div className="mx-auto w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center mb-4">
             <UserPlus className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Crear Cuenta</h2>
-          <p className="text-gray-600">Únete al Asistente ISTQB</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
+          <p className="text-gray-600">Join the ISTQB Assistant</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre de Usuario
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              Username
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -74,7 +74,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                   'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200',
                   errors.username && 'border-red-500 focus:ring-red-500'
                 )}
-                placeholder="Elige un nombre de usuario"
+                placeholder="Choose a username"
               />
             </div>
             {errors.username && (
@@ -83,8 +83,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Correo Electrónico
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -98,7 +98,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                   'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200',
                   errors.email && 'border-red-500 focus:ring-red-500'
                 )}
-                placeholder="tu@email.com"
+                placeholder="your@email.com"
               />
             </div>
             {errors.email && (
@@ -107,8 +107,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -122,7 +122,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                   'w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200',
                   errors.password && 'border-red-500 focus:ring-red-500'
                 )}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Minimum 6 characters"
               />
               <button
                 type="button"
@@ -142,8 +142,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Contraseña
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              Confirm Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -157,7 +157,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
                   'w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200',
                   errors.confirmPassword && 'border-red-500 focus:ring-red-500'
                 )}
-                placeholder="Repite tu contraseña"
+                placeholder="Repeat your password"
               />
               <button
                 type="button"
@@ -189,7 +189,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
             ) : (
               <>
                 <UserPlus className="h-5 w-5" />
-                <span>Crear Cuenta</span>
+                <span>Create Account</span>
               </>
             )}
           </button>
@@ -197,13 +197,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
 
         <div className="mt-8 text-center">
           <p className="text-gray-600">
-            ¿Ya tienes una cuenta?{' '}
+            Already have an account?{' '}
             <button
               type="button"
               onClick={onSwitchToLogin}
               className="text-primary-500 hover:text-primary-600 font-semibold transition-colors duration-200"
             >
-              Inicia sesión aquí
+              Log in here
             </button>
           </p>
         </div>

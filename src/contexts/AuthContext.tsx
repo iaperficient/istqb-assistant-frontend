@@ -14,7 +14,7 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -41,13 +41,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = localStorage.getItem('user_data');
         if (userData) {
           try {
-            const parsedUser = JSON.parse(userData);
-            // Verify the user data is still valid by making a request
             const currentUser = await apiService.getCurrentUser();
             setUser(currentUser);
             localStorage.setItem('user_data', JSON.stringify(currentUser));
           } catch (error) {
-            // Token is invalid, clear storage
             console.log('Token validation failed, clearing auth data');
             apiService.logout();
             localStorage.removeItem('user_data');
@@ -63,12 +60,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleTokenExpired = () => {
       setUser(null);
       localStorage.removeItem('user_data');
-      navigate('/auth', { replace: true });
+      sessionStorage.clear();
+      localStorage.removeItem('conversation_id');
       toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      navigate('/auth', { replace: true });
     };
 
     window.addEventListener('tokenExpired', handleTokenExpired);
-
     return () => {
       window.removeEventListener('tokenExpired', handleTokenExpired);
     };
@@ -77,20 +75,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
+      localStorage.clear();
+      sessionStorage.clear();
+      localStorage.removeItem('conversation_id');
+
       const tokenData = await apiService.login({ username, password });
-      
-      // Get user data after successful login
       const userData = await apiService.getCurrentUser();
-      
       setUser(userData);
       localStorage.setItem('user_data', JSON.stringify(userData));
+
       toast.success(`¡Bienvenido${userData.is_admin ? ' Admin' : ''} al Asistente ISTQB!`);
-      
-      // Navigate to home page after successful login
+
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
     } catch (error: any) {
-      toast.error(error.message || 'Error al iniciar sesión');
+      toast.error(error.message || 'Error signing in');
       throw error;
     } finally {
       setIsLoading(false);
@@ -100,10 +99,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (username: string, email: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
-      const userData = await apiService.register({ username, email, password });
+      await apiService.register({ username, email, password });
       toast.success('Registro exitoso. Ya puedes iniciar sesión.');
     } catch (error: any) {
-      toast.error(error.message || 'Error al registrar usuario');
+      toast.error(error.message || 'Error registering user');
       throw error;
     } finally {
       setIsLoading(false);
@@ -113,7 +112,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = (): void => {
     apiService.logout();
     setUser(null);
-    localStorage.removeItem('user_data');
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.removeItem('conversation_id');
     toast.info('Sesión cerrada correctamente');
     navigate('/auth', { replace: true });
   };

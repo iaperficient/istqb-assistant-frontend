@@ -38,27 +38,27 @@ describe('LoginForm', () => {
     renderLoginForm();
     
     // Check form elements are rendered
-    expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
-    expect(screen.getByText(/¿no tienes una cuenta?/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByText(/don't have an account\?/i)).toBeInTheDocument();
   });
 
   it('shows validation errors when form is submitted empty', async () => {
     renderLoginForm();
     
     // Submit the form without filling any fields
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Check for validation messages
-    expect(await screen.findByText(/el nombre de usuario es requerido/i)).toBeInTheDocument();
-    expect(await screen.findByText(/la contraseña es requerida/i)).toBeInTheDocument();
+    expect(await screen.findByText(/username is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
   });
 
   it('toggles password visibility when eye icon is clicked', () => {
     renderLoginForm();
     
-    const passwordInput = screen.getByLabelText(/contraseña/i) as HTMLInputElement;
+    const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
     
     // Password should be hidden by default
     expect(passwordInput.type).toBe('password');
@@ -83,7 +83,7 @@ describe('LoginForm', () => {
   it('calls onSwitchToRegister when register link is clicked', () => {
     renderLoginForm();
     
-    const registerLink = screen.getByText(/regístrate aquí/i);
+    const registerLink = screen.getByText(/register here/i);
     fireEvent.click(registerLink);
     
     expect(onSwitchToRegister).toHaveBeenCalledTimes(1);

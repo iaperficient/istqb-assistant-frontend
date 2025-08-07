@@ -33,6 +33,10 @@ function App() {
               } 
             />
             <Route 
+              path="/login" 
+              element={<AuthPage />} 
+            />
+            <Route 
               path="/admin" 
               element={
                 <ProtectedAdminRoute>

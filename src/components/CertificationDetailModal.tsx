@@ -98,7 +98,7 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-gray-600">Código:</span>
+                      <span className="font-medium text-gray-600">Code:</span>
                       <span className="ml-2">{certification.code}</span>
                     </div>
                     <div>
@@ -109,7 +109,7 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                     </div>
                     {certification.version && (
                       <div>
-                        <span className="font-medium text-gray-600">Versión:</span>
+                        <span className="font-medium text-gray-600">Version:</span>
                         <span className="ml-2">{certification.version}</span>
                       </div>
                     )}
@@ -121,7 +121,7 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                   
                   {certification.description && (
                     <div className="mt-3">
-                      <span className="font-medium text-gray-600">Descripción:</span>
+                      <span className="font-medium text-gray-600">Description:</span>
                       <p className="mt-1 text-gray-700">{certification.description}</p>
                     </div>
                   )}
@@ -134,7 +134,7 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                       rel="noopener noreferrer"
                       className="ml-2 text-blue-600 hover:text-blue-800 inline-flex items-center"
                     >
-                      Ver página oficial
+                      View official page
                       <ExternalLink className="w-4 h-4 ml-1" />
                     </a>
                   </div>
@@ -165,7 +165,7 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                   <div className="bg-green-50 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-sm font-medium text-green-900">Exámenes de Muestra</h4>
+                        <h4 className="text-sm font-medium text-green-900">Sample Exams</h4>
                         <p className="text-2xl font-bold text-green-700">{sampleExamDocuments.length}</p>
                         <p className="text-xs text-green-600">documento(s)</p>
                       </div>
@@ -203,7 +203,7 @@ export const CertificationDetailModal: React.FC<CertificationDetailModalProps> =
                       <FileText className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                       <p className="text-gray-500">No hay documentos subidos</p>
                       <p className="text-sm text-gray-400 mt-1">
-                        Comienza subiendo un syllabus y exámenes de muestra
+                        Start by uploading a syllabus and sample exams
                       </p>
                       <div className="mt-4 space-x-2">
                         <button

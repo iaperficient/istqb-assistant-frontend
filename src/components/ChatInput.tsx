@@ -12,20 +12,24 @@ interface ChatInputProps {
   selectedCertification?: string | null;
   onCertificationSelect?: (code: string | null) => void;
   onClearChat?: () => void;
+  showQuickActions?: boolean;
+  message: string;
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ 
-  onSendMessage, 
-  isLoading, 
-  placeholder = "Pregunta sobre certificaciones ISTQB...",
+export const ChatInput: React.FC<ChatInputProps> = ({
+  onSendMessage,
+  isLoading,
+  placeholder = "Ask about ISTQB certifications...",
   selectedCertification,
   onCertificationSelect,
-  onClearChat
+  onClearChat,
+  showQuickActions = true,
+  message,
+  setMessage,
 }) => {
-  const [message, setMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [certifications, setCertifications] = useState<CertificationResponse[]>([]);
-  const [showQuickActions, setShowQuickActions] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -52,7 +56,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     e.preventDefault();
     if (message.trim() && !isLoading) {
       onSendMessage(message.trim());
-      setMessage('');
+      // Clear the message only after successful processing
+      setTimeout(() => setMessage(''), 500); // Delay clearing the input
     }
   };
 
@@ -67,33 +72,33 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       const recognition = new SpeechRecognition();
-      
+
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'es-ES';
-      
+      recognition.lang = 'en-US';
+
       recognition.onstart = () => {
         setIsListening(true);
       };
-      
+
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setMessage(prev => prev + transcript);
         setIsListening(false);
       };
-      
+
       recognition.onerror = () => {
         setIsListening(false);
-        toast.error('Error en el reconocimiento de voz');
+        toast.error('Error in voice recognition');
       };
-      
+
       recognition.onend = () => {
         setIsListening(false);
       };
-      
+
       recognition.start();
     } else {
-      toast.error('El reconocimiento de voz no está soportado en este navegador');
+      toast.error('Voice recognition is not supported in this browser');
     }
   };
 
@@ -111,22 +116,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     let actionMessage = '';
     switch (action) {
       case 'syllabus':
-        actionMessage = 'Ver Syllabus de la certificación seleccionada';
+        actionMessage = 'View syllabus for the selected certification';
         break;
       case 'test':
-        actionMessage = 'Generar un test de práctica';
+        actionMessage = 'Generate a practice test';
         break;
       case 'concepts':
-        actionMessage = 'Explicar conceptos clave de ISTQB';
+        actionMessage = 'Explain key concepts of ISTQB';
         break;
       case 'tips':
-        actionMessage = 'Dar tips para el examen';
+        actionMessage = 'Provide exam tips';
         break;
       case 'faq':
-        actionMessage = 'Preguntas frecuentes sobre ISTQB';
+        actionMessage = 'Frequently asked questions about ISTQB';
         break;
       case 'summary':
-        actionMessage = 'Hacer un resumen de los temas importantes';
+        actionMessage = 'Summarize important topics';
         break;
     }
     setMessage(actionMessage);
@@ -135,7 +140,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const selectedCert = certifications.find(cert => cert.code === selectedCertification);
 
   return (
-    <div className="p-4 bg-white border-t border-gray-200">
+    <div className="p-4 bg-white">
       {/* Context Bar - like in the image */}
       {selectedCertification && selectedCert && (
         <div className="mb-4 flex items-center justify-between bg-blue-50 rounded-lg px-4 py-3 border border-blue-200">
@@ -145,11 +150,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-blue-900">Contexto activo:</span>
+                <span className="text-sm font-medium text-blue-900">Active context:</span>
                 <span className="text-sm font-semibold text-blue-800">{selectedCert.code}</span>
                 <span className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded text-xs">General</span>
               </div>
-              <p className="text-xs text-blue-600 mt-1">Certificación activa para el contexto del chat</p>
+              <p className="text-xs text-blue-600 mt-1">Active certification for the chat context</p>
             </div>
           </div>
           <button
@@ -161,145 +166,75 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
 
-      {/* Quick Actions Section */}
-      <div className="mb-4">
-        {/* Action Buttons Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-              <Lightbulb className="w-3 h-3 text-white" />
-            </div>
-            <span className="text-sm font-medium text-gray-700">Acciones Rápidas</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-500">{selectedCert?.code || 'General'}</span>
-            <button
-              onClick={() => setShowQuickActions(!showQuickActions)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              {showQuickActions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Action Buttons Grid */}
-        {showQuickActions && (
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <button
-              onClick={() => handleQuickAction('syllabus')}
-              className="flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg py-3 px-4 transition-colors"
-            >
-              <FileText className="w-4 h-4" />
-              <span className="text-sm font-medium">Ver Syllabus</span>
-            </button>
-            
-            <button
-              onClick={() => handleQuickAction('test')}
-              className="flex items-center justify-center space-x-2 bg-green-500 hover:bg-green-600 text-white rounded-lg py-3 px-4 transition-colors"
-            >
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">Generar Test</span>
-            </button>
-            
-            <button
-              onClick={() => handleQuickAction('concepts')}
-              className="flex items-center justify-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg py-3 px-4 transition-colors"
-            >
-              <Lightbulb className="w-4 h-4" />
-              <span className="text-sm font-medium">Conceptos Clave</span>
-            </button>
-            
-            <button
-              onClick={() => handleQuickAction('tips')}
-              className="flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg py-3 px-4 transition-colors"
-            >
-              <HelpCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">Tips de Examen</span>
-            </button>
-          </div>
-        )}
-
-        {/* Secondary Actions */}
-        {showQuickActions && (
-          <div className="flex justify-center space-x-4 mb-4">
-            <button
-              onClick={() => handleQuickAction('faq')}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 text-sm"
-            >
-              <HelpCircle className="w-4 h-4" />
-              <span>FAQ</span>
-            </button>
-            
-            <button
-              onClick={() => handleQuickAction('summary')}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 text-sm"
-            >
-              <FileX className="w-4 h-4" />
-              <span>Resumen</span>
-            </button>
-          </div>
-        )}
-
-        {/* Toggle Button */}
-        <div className="flex justify-center">
+      {/* Default Suggestions */}
+      {showQuickActions && (
+        <div className="mb-3 flex space-x-2 justify-center">
           <button
-            onClick={() => setShowQuickActions(!showQuickActions)}
-            className="flex items-center space-x-1 text-xs text-gray-500 hover:text-gray-700"
+            type="button"
+            onClick={() => setMessage("Generate a mock exam to evaluate my knowledge")}
+            className="bg-pink-100 text-pink-800 hover:opacity-80 px-3 py-1 rounded-full text-sm"
           >
-            {showQuickActions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            <span>{showQuickActions ? 'Ocultar acciones rápidas' : 'Mostrar acciones rápidas'}</span>
+            Generate a mock exam to evaluate my knowledge
+          </button>
+          <button
+            type="button"
+            onClick={() => setMessage("Create a personalized study plan for me")}
+            className="bg-green-100 text-green-800 hover:opacity-80 px-3 py-1 rounded-full text-sm"
+          >
+            Create a personalized study plan for me
+          </button>
+          <button
+            type="button"
+            onClick={() => setMessage("Explain the different ISTQB certification levels")}
+            className="bg-blue-100 text-blue-800 hover:opacity-80 px-3 py-1 rounded-full text-sm"
+          >
+            Explain the different ISTQB certification levels
           </button>
         </div>
-      </div>
+      )}
 
       {/* Message Input */}
-      <form onSubmit={handleSubmit} className="flex items-end space-x-3">
-        <div className="flex-1 relative">
+      <div className="flex flex-col items-center w-[896px] mb-2">
+        <form onSubmit={handleSubmit} className="relative flex items-end w-full">
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder={placeholder}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none max-h-32 text-sm"
-            rows={1}
-            disabled={isLoading}
+            className="w-full pr-12 py-4 border border-gray-400 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 resize-none max-h-40 text-lg pl-4 text-gray-500"
+            style={{
+              scrollbarWidth: 'none',
+              /* @ts-ignore */
+              msOverflowStyle: 'none',
+            }}
+            onScroll={(e) => {
+              const target = e.target as HTMLElement;
+              target.style.scrollbarWidth = 'none';
+              /* @ts-ignore */
+              target.style.msOverflowStyle = 'none';
+            }}
           />
+          <style>
+            {`
+              textarea::-webkit-scrollbar {
+                display: none;
+              }
+            `}
+          </style>
+          {message.trim() && !isLoading && (
+            <button
+              type="submit"
+              className="absolute right-3 bottom-4 p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          )}
+        </form>
+        <div className="w-full text-center mt-1">
+          <span className="text-xs text-gray-400">This AI assistant may make mistakes. Please verify important information.</span>
         </div>
-        
-        {/* Voice Button */}
-        <button
-          type="button"
-          onClick={isListening ? stopListening : startListening}
-          className={cn(
-            "p-3 rounded-lg transition-colors",
-            isListening 
-              ? "bg-red-500 text-white hover:bg-red-600" 
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          )}
-          disabled={isLoading}
-        >
-          {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-        </button>
-        
-        {/* Send Button */}
-        <button
-          type="submit"
-          disabled={!message.trim() || isLoading}
-          className={cn(
-            "p-3 rounded-lg transition-colors",
-            message.trim() && !isLoading
-              ? "bg-blue-500 text-white hover:bg-blue-600"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-          )}
-        >
-          {isLoading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

@@ -150,6 +150,15 @@ class ApiService {
     }
   }
 
+  async getChatHistory(conversationId: string): Promise<any[]> {
+    try {
+      const response = await this.api.get<any[]>(`/chat/history/${conversationId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
   async getCurrentUser(): Promise<UserInfo> {
     try {
       const response = await this.api.get<UserInfo>('/auth/me');
