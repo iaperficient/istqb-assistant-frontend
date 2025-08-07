@@ -1,11 +1,20 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
+import { vi } from 'vitest';
 import { LoginForm } from '../components/LoginForm';
+import { MemoryRouter } from 'react-router-dom';
+import { AuthProvider } from '../contexts/AuthContext';
 
 describe('LoginForm', () => {
   it('renders login form with all fields', () => {
-    render(<LoginForm onSwitchToRegister={() => {}} />);
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm onSwitchToRegister={() => {}} />
+        </AuthProvider>
+      </MemoryRouter>
+    );
     expect(screen.getByText('Welcome')).toBeInTheDocument();
     expect(screen.getByLabelText('Username')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
@@ -14,15 +23,27 @@ describe('LoginForm', () => {
   });
 
   it('shows validation errors when fields are empty', async () => {
-    render(<LoginForm onSwitchToRegister={() => {}} />);
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm onSwitchToRegister={() => {}} />
+        </AuthProvider>
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByText('Sign In'));
     expect(await screen.findByText('Username is required')).toBeInTheDocument();
     expect(await screen.findByText('Password is required')).toBeInTheDocument();
   });
 
   it('calls onSwitchToRegister when register button is clicked', () => {
-    const mockSwitch = jest.fn();
-    render(<LoginForm onSwitchToRegister={mockSwitch} />);
+    const mockSwitch = vi.fn();
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm onSwitchToRegister={mockSwitch} />
+        </AuthProvider>
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByText('Register here'));
     expect(mockSwitch).toHaveBeenCalled();
   });

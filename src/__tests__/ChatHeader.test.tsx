@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { ChatHeader } from '../components/ChatHeader';
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -22,9 +23,9 @@ const renderWithAuth = (user = mockUser, isAdmin = true) => {
         isAuthenticated: true,
         isLoading: false,
         isAdmin,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
+        login: vi.fn(),
+        register: vi.fn(),
+        logout: vi.fn(),
       }}
     >
       <ChatHeader />
